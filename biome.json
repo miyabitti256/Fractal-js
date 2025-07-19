@@ -1,0 +1,181 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": [
+      "**",
+      "!**/node_modules/**",
+      "!**/dist/**",
+      "!**/build/**",
+      "!**/.astro/**",
+      "!**/coverage/**",
+      "!**/*.wasm",
+      "!**/pkg/**",
+      "!**/.env*"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 100,
+    "attributePosition": "auto",
+    "includes": ["**", "!**/generated/**", "!**/wasm/pkg/**", "!**/.astro/**"]
+  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "a11y": {
+        "recommended": true
+      },
+      "complexity": {
+        "recommended": true
+      },
+      "correctness": {
+        "recommended": true,
+        "useExhaustiveDependencies": "warn"
+      },
+      "nursery": {
+        "useSortedClasses": "warn"
+      },
+      "performance": {
+        "recommended": true
+      },
+      "security": {
+        "recommended": true
+      },
+      "style": {
+        "recommended": true,
+        "noDefaultExport": "off",
+        "noNonNullAssertion": "warn",
+        "noParameterProperties": "off",
+        "noShoutyConstants": "off",
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "requireAscii": true,
+            "filenameCases": ["kebab-case", "PascalCase"]
+          }
+        },
+        "useNamingConvention": {
+          "level": "error",
+          "options": {
+            "strictCase": false,
+            "conventions": [
+              {
+                "selector": {
+                  "kind": "function"
+                },
+                "formats": ["camelCase", "PascalCase"]
+              },
+              {
+                "selector": {
+                  "kind": "variable"
+                },
+                "formats": ["camelCase", "PascalCase", "CONSTANT_CASE"]
+              },
+              {
+                "selector": {
+                  "kind": "typeLike"
+                },
+                "formats": ["PascalCase"]
+              }
+            ]
+          }
+        }
+      },
+      "suspicious": {
+        "recommended": true,
+        "noConsole": "warn",
+        "noExplicitAny": "warn"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "es5",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "bracketSpacing": true,
+      "bracketSameLine": false,
+      "quoteStyle": "single",
+      "attributePosition": "auto"
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineWidth": 100,
+      "trailingCommas": "none"
+    },
+    "parser": {
+      "allowComments": true,
+      "allowTrailingCommas": false
+    }
+  },
+  "css": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineWidth": 100
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["*.ts", "*.tsx"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUndeclaredVariables": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["*.astro"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useNamingConvention": "off"
+          },
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.config.*", "**/vite.config.*", "**/astro.config.*"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/wasm/**/*"],
+      "linter": {
+        "enabled": false
+      },
+      "formatter": {
+        "enabled": false
+      }
+    }
+  ]
+}

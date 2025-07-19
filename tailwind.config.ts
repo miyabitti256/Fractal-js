@@ -1,0 +1,177 @@
+import type { Config } from 'tailwindcss';
+
+const config: Config = {
+  content: [
+    './src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}',
+    './public/**/*.html',
+  ],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          300: '#7dd3fc',
+          400: '#38bdf8',
+          500: '#0ea5e9',
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
+          950: '#082f49',
+        },
+        secondary: {
+          50: '#fdf4ff',
+          100: '#fae8ff',
+          200: '#f5d0fe',
+          300: '#f0abfc',
+          400: '#e879f9',
+          500: '#d946ef',
+          600: '#c026d3',
+          700: '#a21caf',
+          800: '#86198f',
+          900: '#701a75',
+          950: '#4a044e',
+        },
+        accent: {
+          50: '#fff7ed',
+          100: '#ffedd5',
+          200: '#fed7aa',
+          300: '#fdba74',
+          400: '#fb923c',
+          500: '#f97316',
+          600: '#ea580c',
+          700: '#c2410c',
+          800: '#9a3412',
+          900: '#7c2d12',
+          950: '#431407',
+        },
+        fractal: {
+          mandelbrot: '#ff6b6b',
+          julia: '#4ecdc4',
+          burning: '#ffe66d',
+          newton: '#a8e6cf',
+          lyapunov: '#ff8b94',
+          barnsley: '#b4a7d6',
+        },
+      },
+      fontFamily: {
+        sans: [
+          'Inter Variable',
+          'Inter',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'sans-serif',
+        ],
+        mono: [
+          'JetBrains Mono Variable',
+          'JetBrains Mono',
+          'Fira Code',
+          'Consolas',
+          'Monaco',
+          'monospace',
+        ],
+        math: ['KaTeX_Main', 'Times New Roman', 'serif'],
+      },
+      fontSize: {
+        'xs': ['0.75rem', { lineHeight: '1rem' }],
+        'sm': ['0.875rem', { lineHeight: '1.25rem' }],
+        'base': ['1rem', { lineHeight: '1.5rem' }],
+        'lg': ['1.125rem', { lineHeight: '1.75rem' }],
+        'xl': ['1.25rem', { lineHeight: '1.75rem' }],
+        '2xl': ['1.5rem', { lineHeight: '2rem' }],
+        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
+        '4xl': ['2.25rem', { lineHeight: '2.5rem' }],
+        '5xl': ['3rem', { lineHeight: '1' }],
+        '6xl': ['3.75rem', { lineHeight: '1' }],
+        '7xl': ['4.5rem', { lineHeight: '1' }],
+        '8xl': ['6rem', { lineHeight: '1' }],
+        '9xl': ['8rem', { lineHeight: '1' }],
+      },
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
+        '100': '25rem',
+        '112': '28rem',
+        '128': '32rem',
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-in-out',
+        'fade-out': 'fadeOut 0.5s ease-in-out',
+        'slide-in': 'slideIn 0.3s ease-out',
+        'slide-out': 'slideOut 0.3s ease-in',
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'bounce-slow': 'bounce 2s infinite',
+        'spin-slow': 'spin 3s linear infinite',
+        'fractal-glow': 'fractalGlow 2s ease-in-out infinite alternate',
+        'zoom-oscillate': 'zoomOscillate 10s ease-in-out infinite',
+        'color-shift': 'colorShift 5s ease-in-out infinite',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        fadeOut: {
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
+        },
+        slideIn: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        slideOut: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        fractalGlow: {
+          '0%': { 
+            boxShadow: '0 0 20px rgba(255, 107, 107, 0.5)',
+            filter: 'brightness(1)',
+          },
+          '100%': { 
+            boxShadow: '0 0 40px rgba(255, 107, 107, 0.8)',
+            filter: 'brightness(1.1)',
+          },
+        },
+        zoomOscillate: {
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.05)' },
+        },
+        colorShift: {
+          '0%': { filter: 'hue-rotate(0deg)' },
+          '33%': { filter: 'hue-rotate(120deg)' },
+          '66%': { filter: 'hue-rotate(240deg)' },
+          '100%': { filter: 'hue-rotate(360deg)' },
+        },
+      },
+      backdropBlur: {
+        xs: '2px',
+      },
+      screens: {
+        'xs': '475px',
+        '3xl': '1920px',
+        '4xl': '2560px',
+      },
+      zIndex: {
+        '60': '60',
+        '70': '70',
+        '80': '80',
+        '90': '90',
+        '100': '100',
+      },
+    },
+  },
+  plugins: [
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/aspect-ratio'),
+  ],
+};
+
+export default config; 

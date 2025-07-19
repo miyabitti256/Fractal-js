@@ -1,0 +1,55 @@
+{
+  "name": "fractal-explorer",
+  "version": "1.0.0",
+  "description": "Interactive fractal exploration site with WebGPU acceleration",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "lint": "biome lint ./src",
+    "lint:fix": "biome lint --write ./src",
+    "format": "biome format --write ./src",
+    "check": "biome check ./src",
+    "type-check": "astro check",
+    "deploy": "bun run build && gh-pages -d dist"
+  },
+  "keywords": [
+    "astro",
+    "fractal",
+    "mandelbrot",
+    "julia",
+    "webgpu",
+    "canvas",
+    "mathematics",
+    "visualization"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "@biomejs/biome": "^2.1.2",
+    "@tailwindcss/aspect-ratio": "^0.4.2",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.16",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "autoprefixer": "^10.4.21",
+    "gh-pages": "^6.3.0",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.8.3",
+    "vite-plugin-wasm": "^3.5.0"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@astrojs/react": "^4.3.0",
+    "@astrojs/sitemap": "^3.4.1",
+    "@astrojs/tailwind": "^6.0.2",
+    "astro": "^5.12.0",
+    "clsx": "^2.1.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tailwind-merge": "^3.3.1"
+  }
+}

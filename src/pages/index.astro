@@ -1,0 +1,10 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import FractalExplorer from '@/components/FractalExplorer';
+---
+
+<Layout title="Fractal Explorer" description="Interactive fractal exploration with WebGPU acceleration">
+  <main class="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
+    <FractalExplorer client:load />
+  </main>
+</Layout> 
