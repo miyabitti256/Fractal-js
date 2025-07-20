@@ -1,9 +1,9 @@
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
-import type { MandelbrotParameters } from '@/types/fractal';
+import type { AllFractalParameters } from '@/types/fractal';
 
 interface FractalCanvasProps {
   canvasSize: { width: number; height: number };
-  parameters: MandelbrotParameters;
+  parameters: AllFractalParameters;
   onPointerDown: (event: React.PointerEvent) => void;
   onPointerMove: (event: React.PointerEvent) => void;
   onPointerUp: (event: React.PointerEvent) => void;

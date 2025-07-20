@@ -1,11 +1,20 @@
-import type { FractalType, MandelbrotParameters } from '@/types/fractal';
+import type {
+  AllFractalParameters,
+  BurningShipParameters,
+  FractalType,
+  JuliaParameters,
+  MandelbrotParameters,
+  NewtonParameters,
+  ExtendedPerformance,
+  WorkerErrorPayload,
+} from '@/types/fractal';
 import type {
   CompleteMessage,
   ProgressMessage,
   RenderMessage,
   WorkerMessage,
 } from '@/workers/fractal-worker';
-import { ColorPalette } from './fractal-utils';
+import { ColorPalette, FractalCalculations } from './fractal-utils';
 import { WebGPUEngine } from './webgpu-engine';
 
 export interface RenderOptions {
@@ -170,7 +179,7 @@ export class FractalEngine {
    */
   async renderFractal(
     fractalType: FractalType,
-    parameters: MandelbrotParameters,
+    parameters: AllFractalParameters,
     options: RenderOptions
   ): Promise<RenderResult> {
     const startTime = performance.now();
@@ -178,12 +187,18 @@ export class FractalEngine {
     let result: RenderResult;
 
     // レンダリング方法を決定
-    if (options.useWebGPU && this.isWebGPUSupported && this.webgpuEngine?.initialized) {
-      result = await this.renderWithWebGPU(parameters, options);
+    if (
+      options.useWebGPU &&
+      this.isWebGPUSupported &&
+      this.webgpuEngine?.initialized &&
+      fractalType === 'mandelbrot'
+    ) {
+      // WebGPUは現在マンデルブロ集合のみ対応
+      result = await this.renderWithWebGPU(parameters as MandelbrotParameters, options);
     } else if (options.useWorkers && this.workerPool.length > 0) {
-      result = await this.renderWithWorkers(parameters, options);
+      result = await this.renderWithWorkers(fractalType, parameters, options);
     } else {
-      result = await this.renderWithCPU(parameters, options);
+      result = await this.renderWithCPU(fractalType, parameters, options);
     }
 
     const renderTime = performance.now() - startTime;
@@ -244,10 +259,18 @@ export class FractalEngine {
    * マルチスレッドWorkerレンダリング
    */
   private async renderWithWorkers(
-    parameters: MandelbrotParameters,
+    fractalType: FractalType,
+    parameters: AllFractalParameters,
     options: RenderOptions
   ): Promise<RenderResult> {
-    const { width, height, tileSize = 64, paletteType = 'mandelbrot' } = options;
+    const { width, height, tileSize = 64, paletteType = 'rainbow' } = options;
+    
+    // ニュートンフラクタルの場合も、ユーザーが選択したパレットタイプを尊重
+    // ただし、デフォルトが指定されていない場合のみnewtonパレットを使用
+    const effectivePaletteType = fractalType === 'newton' && paletteType === 'rainbow' 
+      ? 'newton' 
+      : paletteType;
+    
     const tilesX = Math.ceil(width / tileSize);
     const tilesY = Math.ceil(height / tileSize);
     const totalTiles = tilesX * tilesY;
@@ -279,6 +302,7 @@ export class FractalEngine {
 
         const promise = this.renderTileWithWorker(
           worker,
+          fractalType,
           parameters,
           width,
           height,
@@ -286,7 +310,7 @@ export class FractalEngine {
           tileY,
           tileWidth,
           tileHeight,
-          paletteType
+          effectivePaletteType
         ).then((tileResult) => {
           // タイル結果を合成
           this.compositeTile(
@@ -330,6 +354,35 @@ export class FractalEngine {
    * シングルスレッドCPUレンダリング
    */
   private async renderWithCPU(
+    fractalType: FractalType,
+    parameters: AllFractalParameters,
+    options: RenderOptions
+  ): Promise<RenderResult> {
+    const { width, height, paletteType = 'mandelbrot' } = options;
+
+    console.log(`🐌 シングルスレッドCPUレンダリング開始 - ${fractalType}`);
+
+    console.log(`レンダリング開始: ${fractalType} フラクタル`);
+
+    switch (fractalType) {
+      case 'mandelbrot':
+        return this.renderMandelbrotCPU(parameters as MandelbrotParameters, options);
+      case 'julia':
+        return this.renderJuliaCPU(parameters as JuliaParameters, options);
+      case 'burning-ship':
+        return this.renderBurningShipCPU(parameters as BurningShipParameters, options);
+      case 'newton':
+        console.log('Newton fractal パラメータ:', parameters);
+        return this.renderNewtonCPU(parameters as NewtonParameters, options);
+      default:
+        throw new Error(`Unsupported fractal type for CPU rendering: ${fractalType}`);
+    }
+  }
+
+  /**
+   * マンデルブロ集合のCPUレンダリング
+   */
+  private async renderMandelbrotCPU(
     parameters: MandelbrotParameters,
     options: RenderOptions
   ): Promise<RenderResult> {
@@ -338,8 +391,6 @@ export class FractalEngine {
     const aspectRatio = width / height;
     const scale = 3.0 / parameters.zoom;
 
-    console.log('🐌 シングルスレッドCPUレンダリング開始 - 意図的に遅くしています');
-
     for (let y = 0; y < height; y++) {
       const row: number[] = [];
 
@@ -347,7 +398,7 @@ export class FractalEngine {
         const real = parameters.centerX + ((x - width / 2) * scale * aspectRatio) / width;
         const imaginary = parameters.centerY + ((y - height / 2) * scale) / height;
 
-        const iterations = this.calculateMandelbrotPoint(
+        const iterations = FractalCalculations.mandelbrot(
           real,
           imaginary,
           parameters.iterations,
@@ -359,13 +410,9 @@ export class FractalEngine {
 
       iterationData.push(row);
 
-      // プログレス報告をより頻繁に行い、意図的に遅延を追加
       if (y % 5 === 0) {
         const progress = y / height;
         options.onProgress?.(progress);
-
-        // シングルスレッドの遅さを体感させるため、意図的に少し遅延
-        // 実際のアプリでは不要ですが、デモ用です
         await new Promise((resolve) => setTimeout(resolve, 1));
       }
     }
@@ -376,7 +423,7 @@ export class FractalEngine {
     return {
       imageData,
       iterationData,
-      renderTime: 0, // 外部で設定
+      renderTime: 0,
       method: 'cpu',
       stats: {
         ...stats,
@@ -386,11 +433,293 @@ export class FractalEngine {
   }
 
   /**
+   * ジュリア集合のCPUレンダリング
+   */
+  private async renderJuliaCPU(
+    parameters: JuliaParameters,
+    options: RenderOptions
+  ): Promise<RenderResult> {
+    const { width, height, paletteType = 'julia' } = options;
+    const iterationData: number[][] = [];
+    const aspectRatio = width / height;
+    const scale = 3.0 / parameters.zoom;
+
+    for (let y = 0; y < height; y++) {
+      const row: number[] = [];
+
+      for (let x = 0; x < width; x++) {
+        const real = parameters.centerX + ((x - width / 2) * scale * aspectRatio) / width;
+        const imaginary = parameters.centerY + ((y - height / 2) * scale) / height;
+
+        const iterations = FractalCalculations.julia(
+          real,
+          imaginary,
+          parameters.c,
+          parameters.iterations,
+          parameters.escapeRadius
+        );
+
+        row.push(iterations);
+      }
+
+      iterationData.push(row);
+
+      if (y % 5 === 0) {
+        const progress = y / height;
+        options.onProgress?.(progress);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+      }
+    }
+
+    const imageData = ColorPalette.applyPalette(iterationData, parameters.iterations, paletteType);
+    const stats = this.calculateStats(iterationData);
+
+    return {
+      imageData,
+      iterationData,
+      renderTime: 0,
+      method: 'cpu',
+      stats: {
+        ...stats,
+        memoryUsed: this.estimateMemoryUsage(width, height),
+      },
+    };
+  }
+
+  /**
+   * バーニングシップフラクタルのCPUレンダリング
+   */
+  private async renderBurningShipCPU(
+    parameters: BurningShipParameters,
+    options: RenderOptions
+  ): Promise<RenderResult> {
+    const { width, height, paletteType = 'fire' } = options;
+    const iterationData: number[][] = [];
+    const aspectRatio = width / height;
+    const scale = 3.0 / parameters.zoom;
+
+    for (let y = 0; y < height; y++) {
+      const row: number[] = [];
+
+      for (let x = 0; x < width; x++) {
+        const real = parameters.centerX + ((x - width / 2) * scale * aspectRatio) / width;
+        const imaginary = parameters.centerY + ((y - height / 2) * scale) / height;
+
+        const iterations = FractalCalculations.burningShip(
+          real,
+          imaginary,
+          parameters.iterations,
+          parameters.escapeRadius
+        );
+
+        row.push(iterations);
+      }
+
+      iterationData.push(row);
+
+      if (y % 5 === 0) {
+        const progress = y / height;
+        options.onProgress?.(progress);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+      }
+    }
+
+    const imageData = ColorPalette.applyPalette(iterationData, parameters.iterations, paletteType);
+    const stats = this.calculateStats(iterationData);
+
+    return {
+      imageData,
+      iterationData,
+      renderTime: 0,
+      method: 'cpu',
+      stats: {
+        ...stats,
+        memoryUsed: this.estimateMemoryUsage(width, height),
+      },
+    };
+  }
+
+  /**
+   * ニュートン法フラクタルのCPUレンダリング
+   */
+  private async renderNewtonCPU(
+    parameters: NewtonParameters,
+    options: RenderOptions
+  ): Promise<RenderResult> {
+    const { width, height } = options;
+    const iterationData: number[][] = [];
+    const aspectRatio = width / height;
+    const scale = 3.0 / parameters.zoom;
+
+    // 根の数を取得してカラーパレット戦略を決定
+    const rootCount = parameters.roots?.length || 3;
+    console.log(`Newton fractal rendering: ${rootCount} roots detected`);
+    
+    // 根が4以上の場合、グレーパレットを含む拡張パレットを使用
+    const useExtendedPalette = rootCount >= 4;
+    if (useExtendedPalette) {
+      console.log(`🎨 Extended palette mode: RGB + Gray palette for ${rootCount} roots`);
+    }
+
+    for (let y = 0; y < height; y++) {
+      const row: number[] = [];
+
+      for (let x = 0; x < width; x++) {
+        const real = parameters.centerX + ((x - width / 2) * scale * aspectRatio) / width;
+        const imaginary = parameters.centerY + ((y - height / 2) * scale) / height;
+
+        const result = FractalCalculations.newton(
+          real,
+          imaginary,
+          parameters.polynomial,
+          parameters.tolerance,
+          parameters.iterations,
+          parameters.roots
+        );
+
+        // 根の番号に基づいて色分け (root * 100 + iterations)
+        const colorValue =
+          result.root >= 0 ? result.root * 100 + result.iterations : parameters.iterations;
+        row.push(colorValue);
+      }
+
+      iterationData.push(row);
+
+      if (y % 5 === 0) {
+        const progress = y / height;
+        options.onProgress?.(progress);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+      }
+    }
+
+    // 根の数に応じて動的にカラーパレットを生成
+    const selectedPaletteType = options.paletteType || 'newton';
+    
+    if (selectedPaletteType === 'newton') {
+      // Newton専用パレット（根が4以上の場合はグレーパレット含む）
+      const dynamicPalette = ColorPalette.getNewtonPalette(256, rootCount);
+      const imageData = this.applyNewtonPalette(iterationData, parameters.iterations, dynamicPalette, rootCount);
+      const stats = this.calculateStats(iterationData);
+
+      return {
+        imageData,
+        iterationData,
+        renderTime: 0,
+        method: 'cpu',
+        stats: {
+          ...stats,
+          memoryUsed: this.estimateMemoryUsage(width, height),
+        },
+      };
+    } else {
+      // 標準パレット（他のフラクタルと同様の処理）
+      const imageData = ColorPalette.applyPalette(iterationData, parameters.iterations, selectedPaletteType);
+      const stats = this.calculateStats(iterationData);
+
+      return {
+        imageData,
+        iterationData,
+        renderTime: 0,
+        method: 'cpu',
+        stats: {
+          ...stats,
+          memoryUsed: this.estimateMemoryUsage(width, height),
+        },
+      };
+    }
+  }
+
+  /**
+   * Newton フラクタル専用のカラーパレット適用
+   * 根の数に応じて最適化されたカラーマッピングを行う
+   */
+  private applyNewtonPalette(
+    iterationData: number[][],
+    maxIterations: number,
+    palette: number[][],
+    rootCount: number
+  ): ImageData {
+    if (!iterationData || iterationData.length === 0 || !iterationData[0]) {
+      return new ImageData(1, 1);
+    }
+
+    const width = iterationData[0].length;
+    const height = iterationData.length;
+    const imageData = new ImageData(width, height);
+
+    // パレットの色セット数を計算（根が4以上の場合はグレーパレットを含む）
+    const useExtendedPalette = rootCount >= 4;
+    const totalColorSets = useExtendedPalette ? rootCount + 1 : rootCount;
+    const colorsPerSet = Math.floor(palette.length / totalColorSets);
+
+    for (let y = 0; y < height; y++) {
+      const row = iterationData[y];
+      if (!row) continue;
+
+      for (let x = 0; x < width; x++) {
+        const colorValue = row[x];
+        if (colorValue === undefined) continue;
+
+        const index = (y * width + x) * 4;
+
+        if (colorValue === maxIterations) {
+          // 収束しなかった点は黒
+          imageData.data[index] = 0;
+          imageData.data[index + 1] = 0;
+          imageData.data[index + 2] = 0;
+          imageData.data[index + 3] = 255;
+        } else {
+          // 根のインデックスと反復回数を分離
+          const rootIndex = Math.floor(colorValue / 100);
+          const iterations = colorValue % 100;
+
+          if (rootIndex >= 0 && rootIndex < rootCount) {
+            // 通常の根の色（RGB色相パレット）
+            const colorSetOffset = rootIndex * colorsPerSet;
+            const iterationOffset = Math.floor((iterations / maxIterations) * (colorsPerSet - 1));
+            const paletteIndex = colorSetOffset + iterationOffset;
+            
+            const color = palette[paletteIndex];
+            if (color) {
+              imageData.data[index] = color[0] || 0;
+              imageData.data[index + 1] = color[1] || 0;
+              imageData.data[index + 2] = color[2] || 0;
+              imageData.data[index + 3] = color[3] || 255;
+            }
+          } else if (useExtendedPalette && rootIndex >= rootCount) {
+            // 4以上の根の場合、グレーパレットを使用
+            const graySetOffset = rootCount * colorsPerSet;
+            const iterationOffset = Math.floor((iterations / maxIterations) * (colorsPerSet - 1));
+            const paletteIndex = graySetOffset + iterationOffset;
+            
+            const color = palette[paletteIndex];
+            if (color) {
+              imageData.data[index] = color[0] || 0;
+              imageData.data[index + 1] = color[1] || 0;
+              imageData.data[index + 2] = color[2] || 0;
+              imageData.data[index + 3] = color[3] || 255;
+            }
+          } else {
+            // デフォルト色（黒）
+            imageData.data[index] = 0;
+            imageData.data[index + 1] = 0;
+            imageData.data[index + 2] = 0;
+            imageData.data[index + 3] = 255;
+          }
+        }
+      }
+    }
+
+    return imageData;
+  }
+
+  /**
    * Workerでタイルをレンダリング
    */
   private async renderTileWithWorker(
     worker: Worker,
-    parameters: MandelbrotParameters,
+    fractalType: FractalType,
+    parameters: AllFractalParameters,
     width: number,
     height: number,
     tileX: number,
@@ -412,7 +741,13 @@ export class FractalEngine {
           resolve(message as CompleteMessage);
         } else if (message.type === 'error') {
           worker.removeEventListener('message', handleMessage);
-          reject(new Error(message.payload as string));
+          const errorPayload = message.payload as WorkerErrorPayload;
+          const errorMessage =
+            typeof errorPayload === 'string'
+              ? errorPayload
+              : errorPayload?.error || 'Worker error occurred';
+          console.error('Worker error details:', errorPayload);
+          reject(new Error(errorMessage));
         }
       };
 
@@ -422,6 +757,7 @@ export class FractalEngine {
         id: messageId,
         type: 'render',
         payload: {
+          fractalType,
           parameters,
           width,
           height,
@@ -589,8 +925,10 @@ export class FractalEngine {
 
     let memoryUsage = 0;
     if ('memory' in performance) {
-      const memory = (performance as any).memory;
-      memoryUsage = memory.usedJSHeapSize / (1024 * 1024); // MB
+      const memory = (performance as ExtendedPerformance).memory;
+      if (memory) {
+        memoryUsage = memory.usedJSHeapSize / (1024 * 1024); // MB
+      }
     }
 
     const lastRenderTime =

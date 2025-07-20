@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FractalEngine, type PerformanceMetrics } from '@/lib/fractal-engine';
 import { getDefaultParameters } from '@/lib/fractal-utils';
-import type { FractalType, MandelbrotParameters } from '@/types/fractal';
+import type { AllFractalParameters, FractalType } from '@/types/fractal';
 
 export const useFractalEngine = () => {
   const engineRef = useRef<FractalEngine | null>(null);
 
   // State
   const [fractalType, setFractalType] = useState<FractalType>('mandelbrot');
-  const [parameters, setParameters] = useState(
-    () => getDefaultParameters('mandelbrot') as MandelbrotParameters
+  const [parameters, setParameters] = useState<AllFractalParameters>(() =>
+    getDefaultParameters('mandelbrot')
   );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,9 +24,7 @@ export const useFractalEngine = () => {
   // フラクタルタイプ変更時のパラメータ更新
   useEffect(() => {
     const defaultParams = getDefaultParameters(fractalType);
-    if (defaultParams.type === 'mandelbrot') {
-      setParameters(defaultParams);
-    }
+    setParameters(defaultParams);
   }, [fractalType]);
 
   // エンジン初期化
@@ -118,17 +116,31 @@ export const useFractalEngine = () => {
 
   // パラメータ更新関数
   const updateZoom = useCallback((value: number) => {
-    setParameters((prev) => ({ ...prev, zoom: value }));
+    setParameters((prev) => {
+      if ('zoom' in prev) {
+        return { ...prev, zoom: value } as AllFractalParameters;
+      }
+      return prev;
+    });
   }, []);
 
   const updateIterations = useCallback((value: number) => {
     const clampedValue = Math.max(10, Math.min(100000, value));
-    setParameters((prev) => ({ ...prev, iterations: clampedValue }));
+    setParameters((prev) => {
+      if ('iterations' in prev) {
+        return { ...prev, iterations: clampedValue } as AllFractalParameters;
+      }
+      return prev;
+    });
+  }, []);
+
+  const updateParameters = useCallback((updates: Partial<AllFractalParameters>) => {
+    setParameters((prev) => ({ ...prev, ...updates }) as AllFractalParameters);
   }, []);
 
   const resetView = useCallback(() => {
-    setParameters(getDefaultParameters('mandelbrot') as MandelbrotParameters);
-  }, []);
+    setParameters(getDefaultParameters(fractalType));
+  }, [fractalType]);
 
   // クリーンアップ
   useEffect(() => {
@@ -174,6 +186,7 @@ export const useFractalEngine = () => {
     renderFractal,
     updateZoom,
     updateIterations,
+    updateParameters,
     resetView,
     getEngineInfo,
   };

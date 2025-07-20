@@ -1,18 +1,20 @@
 import { useCallback, useRef, useState } from 'react';
 import type { PerformanceMetrics } from '@/lib/fractal-engine';
 import { ColorPalette } from '@/lib/fractal-utils';
-import type { FractalType, MandelbrotParameters } from '@/types/fractal';
+import type { AllFractalParameters, FractalType, NewtonParameters, TabId } from '@/types/fractal';
+import NewtonRootEditor from './NewtonRootEditor';
 
 interface MobileBottomSheetProps {
   bottomSheetHeight: 'collapsed' | 'half' | 'full';
   setBottomSheetHeight: (height: 'collapsed' | 'half' | 'full') => void;
-  activeTab: 'params' | 'settings' | 'info';
-  setActiveTab: (tab: 'params' | 'settings' | 'info') => void;
+  activeTab: TabId;
+  setActiveTab: (tab: TabId) => void;
   fractalType: FractalType;
   setFractalType: (type: FractalType) => void;
-  parameters: MandelbrotParameters;
+  parameters: AllFractalParameters;
   updateZoom: (value: number) => void;
   updateIterations: (value: number) => void;
+  updateParameters: (params: Partial<AllFractalParameters>) => void;
   canvasSize: { width: number; height: number };
   setCanvasSize: (size: { width: number; height: number }) => void;
   paletteType: string;
@@ -39,6 +41,7 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   parameters,
   updateZoom,
   updateIterations,
+  updateParameters,
   canvasSize,
   setCanvasSize,
   paletteType,
@@ -69,27 +72,30 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   }, []);
 
   // ドラッグ中
-  const handleDragMove = useCallback((e: React.TouchEvent | React.PointerEvent) => {
-    if (!isDragging) return;
-    
-    e.preventDefault();
-    const clientY = 'touches' in e ? e.touches[0]?.clientY || 0 : e.clientY;
-    const deltaY = clientY - startY;
-    
-    // ドラッグ範囲を制限
-    const maxDrag = window.innerHeight * 0.8;
-    const limitedDeltaY = Math.max(-maxDrag, Math.min(maxDrag, deltaY));
-    
-    setCurrentTranslateY(limitedDeltaY);
-  }, [isDragging, startY]);
+  const handleDragMove = useCallback(
+    (e: React.TouchEvent | React.PointerEvent) => {
+      if (!isDragging) return;
+
+      // e.preventDefault();
+      const clientY = 'touches' in e ? e.touches[0]?.clientY || 0 : e.clientY;
+      const deltaY = clientY - startY;
+
+      // ドラッグ範囲を制限
+      const maxDrag = window.innerHeight * 0.8;
+      const limitedDeltaY = Math.max(-maxDrag, Math.min(maxDrag, deltaY));
+
+      setCurrentTranslateY(limitedDeltaY);
+    },
+    [isDragging, startY]
+  );
 
   // ドラッグ終了
   const handleDragEnd = useCallback(() => {
     if (!isDragging) return;
-    
+
     setIsDragging(false);
     const threshold = 100; // ピクセル単位の閾値
-    
+
     // 現在の高さと移動距離に基づいて次の状態を決定
     if (bottomSheetHeight === 'collapsed') {
       if (currentTranslateY < -threshold) {
@@ -106,7 +112,7 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         setBottomSheetHeight('half');
       }
     }
-    
+
     setCurrentTranslateY(0);
   }, [isDragging, currentTranslateY, bottomSheetHeight, setBottomSheetHeight]);
 
@@ -114,15 +120,14 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   const getTranslateY = () => {
     if (isDragging) {
       // ドラッグ中は現在の移動量を適用
-      const baseTranslate = bottomSheetHeight === 'collapsed' ? 100 : 
-                           bottomSheetHeight === 'half' ? 50 : 0;
+      const baseTranslate =
+        bottomSheetHeight === 'collapsed' ? 100 : bottomSheetHeight === 'half' ? 50 : 0;
       const dragPercent = (currentTranslateY / window.innerHeight) * 100;
       return Math.max(0, Math.min(100, baseTranslate + dragPercent));
     }
-    
+
     // 通常状態
-    return bottomSheetHeight === 'collapsed' ? 100 : 
-           bottomSheetHeight === 'half' ? 50 : 0;
+    return bottomSheetHeight === 'collapsed' ? 100 : bottomSheetHeight === 'half' ? 50 : 0;
   };
 
   const fractalTypes: Array<{ value: FractalType; label: string }> = [
@@ -153,14 +158,14 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
               <div className="space-y-4">
                 <div className="bg-gray-700/50 p-4 rounded-xl">
                   <label className="block text-sm text-gray-300 mb-2">
-                    ズーム倍率: {parameters.zoom.toExponential(2)}
+                    ズーム倍率: {'zoom' in parameters ? parameters.zoom.toExponential(2) : 'N/A'}
                   </label>
                   <input
                     type="range"
                     min="0.5"
                     max="500"
                     step="0.5"
-                    value={Math.min(500, parameters.zoom)}
+                    value={'zoom' in parameters ? Math.min(500, parameters.zoom) : 1}
                     onChange={(e) => updateZoom(parseFloat(e.target.value))}
                     className="w-full h-3 bg-gray-600 rounded-full appearance-none cursor-pointer slider"
                   />
@@ -168,14 +173,14 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
 
                 <div className="bg-gray-700/50 p-4 rounded-xl">
                   <label className="block text-sm text-gray-300 mb-2">
-                    反復回数: {parameters.iterations}
+                    反復回数: {'iterations' in parameters ? parameters.iterations : 'N/A'}
                   </label>
                   <input
                     type="number"
                     min="10"
                     max="100000"
                     step="10"
-                    value={parameters.iterations}
+                    value={'iterations' in parameters ? parameters.iterations : 100}
                     onChange={(e) => {
                       const value = parseInt(e.target.value);
                       if (!isNaN(value)) {
@@ -186,6 +191,41 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                     placeholder="10 〜 100000"
                   />
                 </div>
+
+                {/* ニュートンフラクタル専用パラメータ */}
+                {fractalType === 'newton' && 'tolerance' in parameters && (
+                  <>
+                    <div className="bg-gray-700/50 p-4 rounded-xl">
+                      <label className="block text-sm text-gray-300 mb-2">
+                        Tolerance: {(parameters as NewtonParameters).tolerance.toExponential(2)}
+                      </label>
+                      <input
+                        type="range"
+                        min="1e-10"
+                        max="1e-3"
+                        step="1e-10"
+                        value={(parameters as NewtonParameters).tolerance}
+                        onChange={(e) => {
+                          updateParameters({
+                            ...parameters,
+                            tolerance: parseFloat(e.target.value),
+                          });
+                        }}
+                        className="w-full h-3 bg-gray-600 rounded-full appearance-none cursor-pointer slider"
+                      />
+                    </div>
+
+                    {/* モバイル用の小さなインタラクティブエディター */}
+                    <div className="bg-gray-700/50 p-2 rounded-xl">
+                      <NewtonRootEditor
+                        parameters={parameters as NewtonParameters}
+                        updateParameters={updateParameters}
+                        width={340}
+                        height={340}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               <button
@@ -216,9 +256,14 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                       <option
                         key={type.value}
                         value={type.value}
-                        disabled={type.value !== 'mandelbrot'}
+                        disabled={
+                          !['mandelbrot', 'julia', 'burning-ship', 'newton'].includes(type.value)
+                        }
                       >
-                        {type.label} {type.value !== 'mandelbrot' ? '(準備中)' : ''}
+                        {type.label}{' '}
+                        {!['mandelbrot', 'julia', 'burning-ship', 'newton'].includes(type.value)
+                          ? '(準備中)'
+                          : ''}
                       </option>
                     ))}
                   </select>
@@ -384,7 +429,7 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       ref={sheetRef}
     >
       {/* ハンドル */}
-      <div 
+      <div
         className="flex justify-center pt-3 pb-1 drag-handle touch-target ui-element"
         onTouchStart={handleDragStart}
         onTouchMove={handleDragMove}
@@ -438,17 +483,17 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       {/* タブナビゲーション */}
       <div className="flex border-b border-gray-700">
         {[
-          { id: 'params', label: 'パラメータ', icon: '⚙️' },
-          { id: 'settings', label: '設定', icon: '🔧' },
-          { id: 'info', label: '情報', icon: '📊' },
+          { id: 'params' as const, label: 'パラメータ', icon: '⚙️' },
+          { id: 'settings' as const, label: '設定', icon: '🔧' },
+          { id: 'info' as const, label: '情報', icon: '📊' },
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id)}
             className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
               activeTab === tab.id
                 ? 'text-primary-400 border-b-2 border-primary-400 bg-gray-700/50'
-                : 'text-gray-400 hover:text-white'
+                : 'text-gray-400 hover:text-gray-300'
             }`}
           >
             <span className="mr-2">{tab.icon}</span>
@@ -458,7 +503,10 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       </div>
 
       {/* タブコンテンツ */}
-      <div className="flex-1 overflow-y-auto mobile-scroll smooth-scroll p-4 bottom-sheet-content">
+      <div
+        className="flex-1 overflow-y-auto mobile-scroll smooth-scroll p-4 bottom-sheet-content"
+        style={{ maxHeight: 'calc(100vh - 200px)' }}
+      >
         <MobileTabContent />
       </div>
     </div>

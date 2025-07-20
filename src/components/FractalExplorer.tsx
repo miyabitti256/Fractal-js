@@ -4,6 +4,7 @@ import { useFractalInteraction } from '@/hooks/useFractalInteraction';
 import DesktopControlPanel from './fractal/DesktopControlPanel';
 import FractalCanvas, { type FractalCanvasRef } from './fractal/FractalCanvas';
 import MobileBottomSheet from './fractal/MobileBottomSheet';
+import type { FractalType, TabId } from '@/types/fractal';
 
 interface FractalExplorerProps {
   className?: string;
@@ -20,27 +21,27 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
   const [bottomSheetHeight, setBottomSheetHeight] = useState<'collapsed' | 'half' | 'full'>(
     'collapsed'
   );
-  const [activeTab, setActiveTab] = useState<'params' | 'settings' | 'info'>('params');
-  
+  const [activeTab, setActiveTab] = useState<TabId>('params');
+
   // 画面サイズに基づく動的キャンバスサイズ計算
   const [canvasSize, setCanvasSize] = useState(() => {
     if (typeof window !== 'undefined') {
       const screenWidth = window.innerWidth;
       const screenHeight = window.innerHeight;
-      
+
       if (screenWidth < 1024) {
         // モバイル: 画面の実際のサイズに合わせる（デバイスピクセル比考慮）
         const devicePixelRatio = window.devicePixelRatio || 1;
         const optimalWidth = Math.floor(screenWidth * devicePixelRatio);
         const optimalHeight = Math.floor(screenHeight * devicePixelRatio);
-        
+
         // 最大解像度制限（パフォーマンス考慮）
         const maxWidth = 2048;
         const maxHeight = 2048;
-        
+
         return {
           width: Math.min(optimalWidth, maxWidth),
-          height: Math.min(optimalHeight, maxHeight)
+          height: Math.min(optimalHeight, maxHeight),
         };
       }
     }
@@ -60,22 +61,22 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
       const screenWidth = window.innerWidth;
       const screenHeight = window.innerHeight;
       const isMobileDevice = screenWidth < 1024;
-      
+
       setIsMobile(isMobileDevice);
-      
+
       if (isMobileDevice) {
         // モバイルの場合、画面サイズに合わせて動的調整
         const devicePixelRatio = window.devicePixelRatio || 1;
         const optimalWidth = Math.floor(screenWidth * devicePixelRatio);
         const optimalHeight = Math.floor(screenHeight * devicePixelRatio);
-        
+
         // 最大解像度制限
         const maxWidth = 2048;
         const maxHeight = 2048;
-        
+
         setCanvasSize({
           width: Math.min(optimalWidth, maxWidth),
-          height: Math.min(optimalHeight, maxHeight)
+          height: Math.min(optimalHeight, maxHeight),
         });
       }
     };
@@ -83,7 +84,7 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
     updateScreenSize();
     window.addEventListener('resize', updateScreenSize);
     window.addEventListener('orientationchange', updateScreenSize);
-    
+
     return () => {
       window.removeEventListener('resize', updateScreenSize);
       window.removeEventListener('orientationchange', updateScreenSize);
@@ -131,18 +132,22 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
 
   if (isMobile) {
     return (
-      <div className={`h-screen ${className} relative overflow-hidden mobile-app`}
-           style={{
-             height: '100dvh', // 動的ビューポート対応
-           }}>
+      <div
+        className={`h-screen ${className} relative overflow-hidden mobile-app`}
+        style={{
+          height: '100dvh', // 動的ビューポート対応
+        }}
+      >
         {/* フルスクリーンキャンバス */}
-        <div className="fixed inset-0 bg-black flex items-center justify-center"
-             style={{
-               paddingTop: 'env(safe-area-inset-top)',
-               paddingBottom: 'env(safe-area-inset-bottom)',
-               paddingLeft: 'env(safe-area-inset-left)',
-               paddingRight: 'env(safe-area-inset-right)',
-             }}>
+        <div
+          className="fixed inset-0 bg-black flex items-center justify-center"
+          style={{
+            paddingTop: 'env(safe-area-inset-top)',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            paddingLeft: 'env(safe-area-inset-left)',
+            paddingRight: 'env(safe-area-inset-right)',
+          }}
+        >
           {fractalEngine.isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
               <div className="text-center">
@@ -153,11 +158,13 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
           )}
 
           {fractalEngine.isRendering && (
-            <div className="absolute top-safe left-safe bg-black/70 text-white px-3 py-2 rounded-full z-10"
-                 style={{
-                   top: `calc(1rem + env(safe-area-inset-top))`,
-                   left: `calc(1rem + env(safe-area-inset-left))`,
-                 }}>
+            <div
+              className="absolute top-safe left-safe bg-black/70 text-white px-3 py-2 rounded-full z-10"
+              style={{
+                top: `calc(1rem + env(safe-area-inset-top))`,
+                left: `calc(1rem + env(safe-area-inset-left))`,
+              }}
+            >
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-xs">{Math.round(fractalEngine.renderProgress * 100)}%</span>
@@ -228,6 +235,7 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
           parameters={fractalEngine.parameters}
           updateZoom={fractalEngine.updateZoom}
           updateIterations={fractalEngine.updateIterations}
+          updateParameters={fractalEngine.updateParameters}
           canvasSize={canvasSize}
           setCanvasSize={setCanvasSize}
           paletteType={fractalEngine.paletteType}
@@ -256,6 +264,7 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
         parameters={fractalEngine.parameters}
         updateZoom={fractalEngine.updateZoom}
         updateIterations={fractalEngine.updateIterations}
+        updateParameters={fractalEngine.updateParameters}
         canvasSize={canvasSize}
         setCanvasSize={setCanvasSize}
         paletteType={fractalEngine.paletteType}

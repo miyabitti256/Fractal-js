@@ -1,13 +1,22 @@
 import type { PerformanceMetrics } from '@/lib/fractal-engine';
 import { ColorPalette } from '@/lib/fractal-utils';
-import type { FractalType, MandelbrotParameters } from '@/types/fractal';
+import type {
+  AllFractalParameters,
+  BurningShipParameters,
+  FractalType,
+  JuliaParameters,
+  MandelbrotParameters,
+  NewtonParameters,
+} from '@/types/fractal';
+import NewtonRootEditor from './NewtonRootEditor';
 
 interface DesktopControlPanelProps {
   fractalType: FractalType;
   setFractalType: (type: FractalType) => void;
-  parameters: MandelbrotParameters;
+  parameters: AllFractalParameters;
   updateZoom: (value: number) => void;
   updateIterations: (value: number) => void;
+  updateParameters: (updates: Partial<AllFractalParameters>) => void;
   canvasSize: { width: number; height: number };
   setCanvasSize: (size: { width: number; height: number }) => void;
   paletteType: string;
@@ -32,6 +41,7 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
   parameters,
   updateZoom,
   updateIterations,
+  updateParameters,
   canvasSize,
   setCanvasSize,
   paletteType,
@@ -86,10 +96,10 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
                     ? 'bg-primary-600 border-primary-500 text-white'
                     : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-600/50'
                 }`}
-                disabled={type.value !== 'mandelbrot'}
+                disabled={!['mandelbrot', 'julia', 'burning-ship', 'newton'].includes(type.value)}
               >
                 <span className={type.color}>●</span> {type.label}
-                {type.value !== 'mandelbrot' && (
+                {!['mandelbrot', 'julia', 'burning-ship', 'newton'].includes(type.value) && (
                   <span className="text-xs text-gray-500 ml-2">(準備中)</span>
                 )}
               </button>
@@ -101,40 +111,129 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-300 mb-3">パラメータ</label>
           <div className="space-y-3">
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">
-                Zoom: {parameters.zoom.toExponential(2)}
-              </label>
-              <input
-                type="range"
-                min="0.5"
-                max="500"
-                step="0.5"
-                value={Math.min(500, parameters.zoom)}
-                onChange={(e) => updateZoom(parseFloat(e.target.value))}
-                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">
-                Iterations: {parameters.iterations}
-              </label>
-              <input
-                type="number"
-                min="10"
-                max="100000"
-                step="10"
-                value={parameters.iterations}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  if (!isNaN(value)) {
-                    updateIterations(value);
-                  }
-                }}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-gray-300 focus:border-primary-500 focus:outline-none"
-                placeholder="10 〜 100000"
-              />
-            </div>
+            {/* 共通パラメータ: Zoom */}
+            {'zoom' in parameters && (
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">
+                  Zoom: {parameters.zoom.toExponential(2)}
+                </label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="500"
+                  step="0.5"
+                  value={Math.min(500, parameters.zoom)}
+                  onChange={(e) => updateZoom(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                />
+              </div>
+            )}
+
+            {/* 共通パラメータ: Iterations */}
+            {'iterations' in parameters && (
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">
+                  Iterations: {parameters.iterations}
+                </label>
+                <input
+                  type="number"
+                  min="10"
+                  max="100000"
+                  step="10"
+                  value={parameters.iterations}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    if (!isNaN(value)) {
+                      updateIterations(value);
+                    }
+                  }}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-gray-300 focus:border-primary-500 focus:outline-none"
+                  placeholder="10 〜 100000"
+                />
+              </div>
+            )}
+
+            {/* Julia Set固有のパラメータ */}
+            {fractalType === 'julia' && 'c' in parameters && (
+              <>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">
+                    Parameter C (Real): {(parameters as JuliaParameters).c.real.toFixed(3)}
+                  </label>
+                  <input
+                    type="range"
+                    min="-2"
+                    max="2"
+                    step="0.001"
+                    value={(parameters as JuliaParameters).c.real}
+                    onChange={(e) => {
+                      const juliaParams = parameters as JuliaParameters;
+                      const newC = { ...juliaParams.c, real: parseFloat(e.target.value) };
+                      updateParameters({
+                        ...juliaParams,
+                        c: newC,
+                      } as Partial<AllFractalParameters>);
+                    }}
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">
+                    Parameter C (Imaginary): {(parameters as JuliaParameters).c.imag.toFixed(3)}
+                  </label>
+                  <input
+                    type="range"
+                    min="-2"
+                    max="2"
+                    step="0.001"
+                    value={(parameters as JuliaParameters).c.imag}
+                    onChange={(e) => {
+                      const juliaParams = parameters as JuliaParameters;
+                      const newC = { ...juliaParams.c, imag: parseFloat(e.target.value) };
+                      updateParameters({
+                        ...juliaParams,
+                        c: newC,
+                      } as Partial<AllFractalParameters>);
+                    }}
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Newton Fractal固有のパラメータ */}
+            {fractalType === 'newton' && 'tolerance' in parameters && (
+              <>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">
+                    Tolerance: {(parameters as NewtonParameters).tolerance.toExponential(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min="1e-10"
+                    max="1e-3"
+                    step="1e-10"
+                    value={(parameters as NewtonParameters).tolerance}
+                    onChange={(e) => {
+                      const newtonParams = parameters as NewtonParameters;
+                      updateParameters({
+                        ...newtonParams,
+                        tolerance: parseFloat(e.target.value),
+                      } as Partial<AllFractalParameters>);
+                    }}
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                </div>
+
+                {/* インタラクティブ根エディター */}
+                <NewtonRootEditor
+                  parameters={parameters as NewtonParameters}
+                  updateParameters={updateParameters}
+                  width={260}
+                  height={260}
+                />
+              </>
+            )}
           </div>
         </div>
 

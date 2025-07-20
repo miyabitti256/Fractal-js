@@ -42,6 +42,7 @@ export interface NewtonParameters extends FractalParameters {
   type: 'newton';
   polynomial: Complex[];
   tolerance: number;
+  roots: Complex[]; // 根の配列を追加
 }
 
 // Lyapunov フラクタルのパラメータ
@@ -115,15 +116,44 @@ export interface PerformanceStats {
 // WebGPU関連の型
 export interface WebGPUContext {
   device: GPUDevice;
-  context: GPUCanvasContext;
-  format: GPUTextureFormat;
-  pipeline: GPUComputePipeline;
-  bindGroup: GPUBindGroup;
+  context: unknown; // GPUCanvasContext
+  format: string; // GPUTextureFormat
+  pipeline: unknown; // GPUComputePipeline
+  bindGroup: unknown; // GPUBindGroup
+}
+
+// Performance Memory API の型定義
+export interface PerformanceMemory {
+  readonly usedJSHeapSize: number;
+  readonly totalJSHeapSize: number;
+  readonly jsHeapSizeLimit: number;
+}
+
+// 拡張されたPerformance型
+export interface ExtendedPerformance extends Performance {
+  memory?: PerformanceMemory;
+}
+
+// Worker メッセージのペイロード型
+export interface WorkerErrorPayload {
+  error: string;
+  details?: string;
+  stack?: string;
+}
+
+// タブID型（MobileBottomSheet用）
+export type TabId = 'params' | 'settings' | 'info';
+
+// WorkerPool用の基本メッセージ型
+export interface WorkerPoolMessage {
+  id?: string;
+  type: string;
+  payload?: unknown;
 }
 
 // Worker メッセージの型
 export interface WorkerMessage {
-  type: 'render' | 'cancel' | 'status';
+  type: 'render' | 'cancel' | 'status' | 'result';
   id: string;
   payload: unknown;
 }

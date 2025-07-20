@@ -2,7 +2,8 @@
 
 /* 安全エリア対応 */
 .mobile-app {
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
 }
 
 /* ビューポート単位の改善 */
@@ -164,7 +165,7 @@ canvas {
     /* 横向きモードでのレイアウト調整 */
     font-size: 0.875rem;
   }
-  
+
   .mobile-landscape .bottom-sheet {
     height: 70vh;
     min-height: 300px;
@@ -183,7 +184,7 @@ canvas {
     @apply w-7 h-7;
     margin-top: -5.5px;
   }
-  
+
   .slider::-moz-range-thumb {
     @apply w-7 h-7;
   }
@@ -214,7 +215,7 @@ canvas {
     justify-content: center;
     overflow: hidden;
   }
-  
+
   .mobile-canvas {
     width: 100%;
     height: 100%;
