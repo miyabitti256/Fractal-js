@@ -1,5 +1,5 @@
 // フラクタルタイプの定義
-export type FractalType = 
+export type FractalType =
   | 'mandelbrot'
   | 'julia'
   | 'burning-ship'
@@ -73,12 +73,7 @@ export type AllFractalParameters =
   | BarnsleyFernParameters;
 
 // カラーマッピングの種類
-export type ColorMapType = 
-  | 'hot'
-  | 'cool'
-  | 'rainbow'
-  | 'grayscale'
-  | 'custom';
+export type ColorMapType = 'hot' | 'cool' | 'rainbow' | 'grayscale' | 'custom';
 
 // カラーパレット設定
 export interface ColorPalette {
@@ -177,4 +172,4 @@ export interface FractalConfig {
     parameters: AllFractalParameters;
     thumbnail?: string;
   }>;
-} 
+}

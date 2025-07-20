@@ -1,7 +1,7 @@
-import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
-import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
+import tailwind from '@astrojs/tailwind';
+import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
@@ -9,14 +9,8 @@ export default defineConfig({
   base: '/Fractal-js',
   outDir: './dist',
   publicDir: './public',
-  
-  integrations: [
-    react(),
-    tailwind({
-      applyBaseStyles: false,
-    }),
-    sitemap(),
-  ],
+
+  integrations: [react(), tailwind(), sitemap()],
 
   vite: {
     plugins: [],
@@ -44,8 +38,4 @@ export default defineConfig({
   },
 
   output: 'static',
-  
-  experimental: {
-    optimizeHoistedScript: true,
-  },
-}); 
+});

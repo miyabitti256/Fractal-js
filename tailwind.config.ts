@@ -1,10 +1,6 @@
-import type { Config } from 'tailwindcss';
-
-const config: Config = {
-  content: [
-    './src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}',
-    './public/**/*.html',
-  ],
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}', './public/**/*.html'],
   darkMode: 'class',
   theme: {
     extend: {
@@ -79,11 +75,11 @@ const config: Config = {
         math: ['KaTeX_Main', 'Times New Roman', 'serif'],
       },
       fontSize: {
-        'xs': ['0.75rem', { lineHeight: '1rem' }],
-        'sm': ['0.875rem', { lineHeight: '1.25rem' }],
-        'base': ['1rem', { lineHeight: '1.5rem' }],
-        'lg': ['1.125rem', { lineHeight: '1.75rem' }],
-        'xl': ['1.25rem', { lineHeight: '1.75rem' }],
+        xs: ['0.75rem', { lineHeight: '1rem' }],
+        sm: ['0.875rem', { lineHeight: '1.25rem' }],
+        base: ['1rem', { lineHeight: '1.5rem' }],
+        lg: ['1.125rem', { lineHeight: '1.75rem' }],
+        xl: ['1.25rem', { lineHeight: '1.75rem' }],
         '2xl': ['1.5rem', { lineHeight: '2rem' }],
         '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
         '4xl': ['2.25rem', { lineHeight: '2.5rem' }],
@@ -130,11 +126,11 @@ const config: Config = {
           '100%': { transform: 'translateX(100%)' },
         },
         fractalGlow: {
-          '0%': { 
+          '0%': {
             boxShadow: '0 0 20px rgba(255, 107, 107, 0.5)',
             filter: 'brightness(1)',
           },
-          '100%': { 
+          '100%': {
             boxShadow: '0 0 40px rgba(255, 107, 107, 0.8)',
             filter: 'brightness(1.1)',
           },
@@ -154,7 +150,7 @@ const config: Config = {
         xs: '2px',
       },
       screens: {
-        'xs': '475px',
+        xs: '475px',
         '3xl': '1920px',
         '4xl': '2560px',
       },
@@ -173,5 +169,3 @@ const config: Config = {
     require('@tailwindcss/aspect-ratio'),
   ],
 };
-
-export default config; 

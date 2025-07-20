@@ -1,263 +1,373 @@
-import type { RenderMessage, ResultMessage, AllFractalParameters, RenderSettings } from '@/types/fractal';
+import type { MandelbrotParameters } from '@/types/fractal';
 
-// Worker内のグローバル型定義
-declare const self: DedicatedWorkerGlobalScope;
-
-/**
- * フラクタル計算を行うWebWorker
- */
-class FractalWorker {
-  private isRunning = false;
-  private currentTaskId: string | null = null;
-
-  constructor() {
-    self.addEventListener('message', this.handleMessage.bind(this));
-  }
-
-  private handleMessage(event: MessageEvent<RenderMessage>): void {
-    const message = event.data;
-    
-    switch (message.type) {
-      case 'render':
-        this.handleRenderRequest(message);
-        break;
-      case 'cancel':
-        this.cancelCurrentTask();
-        break;
-      default:
-        console.warn('Unknown message type:', message.type);
-    }
-  }
-
-  private async handleRenderRequest(message: RenderMessage): Promise<void> {
-    if (this.isRunning) {
-      this.postMessage({
-        type: 'error',
-        id: message.id,
-        payload: { error: 'Worker is busy' }
-      });
-      return;
-    }
-
-    this.isRunning = true;
-    this.currentTaskId = message.id;
-
-    try {
-      const result = await this.renderFractal(
-        message.payload.parameters,
-        message.payload.settings,
-        message.payload.region
-      );
-
-      if (this.currentTaskId === message.id) {
-        const response: ResultMessage = {
-          type: 'result',
-          id: message.id,
-          payload: {
-            result,
-            region: message.payload.region
-          }
-        };
-        this.postMessage(response);
-      }
-    } catch (error) {
-      if (this.currentTaskId === message.id) {
-        this.postMessage({
-          type: 'error',
-          id: message.id,
-          payload: { error: error instanceof Error ? error.message : 'Unknown error' }
-        });
-      }
-    } finally {
-      this.isRunning = false;
-      this.currentTaskId = null;
-    }
-  }
-
-  private cancelCurrentTask(): void {
-    this.currentTaskId = null;
-    this.isRunning = false;
-  }
-
-  private async renderFractal(
-    parameters: AllFractalParameters,
-    settings: RenderSettings,
-    region: { x: number; y: number; width: number; height: number }
-  ) {
-    const startTime = performance.now();
-    
-    // 画像データを作成
-    const imageData = new ImageData(region.width, region.height);
-    const iterations: number[][] = Array(region.height)
-      .fill(0)
-      .map(() => Array(region.width).fill(0));
-
-    // フラクタルタイプに応じて計算
-    switch (parameters.type) {
-      case 'mandelbrot':
-        await this.renderMandelbrot(parameters, imageData, iterations, region);
-        break;
-      case 'julia':
-        await this.renderJulia(parameters, imageData, iterations, region);
-        break;
-      case 'burning-ship':
-        await this.renderBurningShip(parameters, imageData, iterations, region);
-        break;
-      case 'newton':
-        await this.renderNewton(parameters, imageData, iterations, region);
-        break;
-      case 'lyapunov':
-        await this.renderLyapunov(parameters, imageData, iterations, region);
-        break;
-      case 'barnsley-fern':
-        await this.renderBarnsleyFern(parameters, imageData, iterations, region);
-        break;
-      default:
-        throw new Error(`Unsupported fractal type: ${(parameters as any).type}`);
-    }
-
-    const renderTime = performance.now() - startTime;
-
-    return {
-      imageData,
-      renderTime,
-      iterations
-    };
-  }
-
-  private async renderMandelbrot(
-    params: AllFractalParameters,
-    imageData: ImageData,
-    iterations: number[][],
-    region: { x: number; y: number; width: number; height: number }
-  ): Promise<void> {
-    const { width, height } = region;
-    const data = imageData.data;
-
-    for (let py = 0; py < height; py++) {
-      if (this.currentTaskId === null) return; // キャンセルチェック
-
-      for (let px = 0; px < width; px++) {
-        // 複素平面の座標に変換
-        const x0 = (region.x + px) / params.zoom + params.centerX;
-        const y0 = (region.y + py) / params.zoom + params.centerY;
-
-        let x = 0;
-        let y = 0;
-        let iteration = 0;
-
-        // Mandelbrot集合の計算
-        while (x * x + y * y <= params.escapeRadius && iteration < params.iterations) {
-          const xtemp = x * x - y * y + x0;
-          y = 2 * x * y + y0;
-          x = xtemp;
-          iteration++;
-        }
-
-        iterations[py][px] = iteration;
-
-        // カラーマッピング（簡易版）
-        const pixelIndex = (py * width + px) * 4;
-        if (iteration === params.iterations) {
-          // 内部点（黒）
-          data[pixelIndex] = 0;
-          data[pixelIndex + 1] = 0;
-          data[pixelIndex + 2] = 0;
-        } else {
-          // 外部点（カラー）
-          const hue = (iteration / params.iterations) * 360;
-          const rgb = this.hslToRgb(hue, 100, 50);
-          data[pixelIndex] = rgb[0];
-          data[pixelIndex + 1] = rgb[1];
-          data[pixelIndex + 2] = rgb[2];
-        }
-        data[pixelIndex + 3] = 255; // アルファ
-      }
-
-      // 進捗を定期的に報告
-      if (py % 10 === 0) {
-        this.postMessage({
-          type: 'progress',
-          id: this.currentTaskId!,
-          payload: { progress: py / height }
-        });
-      }
-    }
-  }
-
-  // 他のフラクタル計算メソッドのスタブ
-  private async renderJulia(params: any, imageData: ImageData, iterations: number[][], region: any): Promise<void> {
-    // Julia集合の実装をここに追加
-    console.log('Julia set rendering not implemented yet');
-    this.fillWithPlaceholder(imageData, [255, 0, 255]); // マゼンタで仮塗り
-  }
-
-  private async renderBurningShip(params: any, imageData: ImageData, iterations: number[][], region: any): Promise<void> {
-    console.log('Burning Ship rendering not implemented yet');
-    this.fillWithPlaceholder(imageData, [255, 255, 0]); // 黄色で仮塗り
-  }
-
-  private async renderNewton(params: any, imageData: ImageData, iterations: number[][], region: any): Promise<void> {
-    console.log('Newton fractal rendering not implemented yet');
-    this.fillWithPlaceholder(imageData, [0, 255, 255]); // シアンで仮塗り
-  }
-
-  private async renderLyapunov(params: any, imageData: ImageData, iterations: number[][], region: any): Promise<void> {
-    console.log('Lyapunov fractal rendering not implemented yet');
-    this.fillWithPlaceholder(imageData, [255, 128, 0]); // オレンジで仮塗り
-  }
-
-  private async renderBarnsleyFern(params: any, imageData: ImageData, iterations: number[][], region: any): Promise<void> {
-    console.log('Barnsley Fern rendering not implemented yet');
-    this.fillWithPlaceholder(imageData, [0, 255, 0]); // 緑で仮塗り
-  }
-
-  private fillWithPlaceholder(imageData: ImageData, color: [number, number, number]): void {
-    const data = imageData.data;
-    for (let i = 0; i < data.length; i += 4) {
-      data[i] = color[0];
-      data[i + 1] = color[1];
-      data[i + 2] = color[2];
-      data[i + 3] = 255;
-    }
-  }
-
-  private hslToRgb(h: number, s: number, l: number): [number, number, number] {
-    h /= 360;
-    s /= 100;
-    l /= 100;
-
-    const c = (1 - Math.abs(2 * l - 1)) * s;
-    const x = c * (1 - Math.abs(((h * 6) % 2) - 1));
-    const m = l - c / 2;
-
-    let r = 0, g = 0, b = 0;
-
-    if (0 <= h && h < 1/6) {
-      r = c; g = x; b = 0;
-    } else if (1/6 <= h && h < 2/6) {
-      r = x; g = c; b = 0;
-    } else if (2/6 <= h && h < 3/6) {
-      r = 0; g = c; b = x;
-    } else if (3/6 <= h && h < 4/6) {
-      r = 0; g = x; b = c;
-    } else if (4/6 <= h && h < 5/6) {
-      r = x; g = 0; b = c;
-    } else if (5/6 <= h && h < 1) {
-      r = c; g = 0; b = x;
-    }
-
-    return [
-      Math.round((r + m) * 255),
-      Math.round((g + m) * 255),
-      Math.round((b + m) * 255)
-    ];
-  }
-
-  private postMessage(message: any): void {
-    self.postMessage(message);
-  }
+export interface WorkerMessage {
+  id: string;
+  type: 'render' | 'progress' | 'complete' | 'error';
+  payload: unknown;
 }
 
-// Workerインスタンスを作成
-new FractalWorker(); 
+export interface RenderMessage extends WorkerMessage {
+  type: 'render';
+  payload: {
+    parameters: MandelbrotParameters;
+    width: number;
+    height: number;
+    tileX: number;
+    tileY: number;
+    tileWidth: number;
+    tileHeight: number;
+    paletteType?: string;
+  };
+}
+
+export interface ProgressMessage extends WorkerMessage {
+  type: 'progress';
+  payload: {
+    progress: number;
+    tileIndex: number;
+  };
+}
+
+export interface CompleteMessage extends WorkerMessage {
+  type: 'complete';
+  payload: {
+    imageData: ImageData;
+    iterationData: number[][];
+    renderTime: number;
+    tileX: number;
+    tileY: number;
+  };
+}
+
+export interface ErrorMessage extends WorkerMessage {
+  type: 'error';
+  payload: {
+    error: string;
+  };
+}
+
+/**
+ * Mandelbrot集合の計算
+ */
+function calculateMandelbrotPoint(
+  real: number,
+  imaginary: number,
+  maxIterations: number,
+  escapeRadius: number
+): number {
+  let zx = 0;
+  let zy = 0;
+  let iteration = 0;
+
+  while (zx * zx + zy * zy <= escapeRadius && iteration < maxIterations) {
+    const temp = zx * zx - zy * zy + real;
+    zy = 2 * zx * zy + imaginary;
+    zx = temp;
+    iteration++;
+  }
+
+  return iteration;
+}
+
+/**
+ * タイルレンダリング
+ */
+function renderTile(message: RenderMessage): CompleteMessage {
+  const {
+    parameters,
+    width,
+    height,
+    tileX,
+    tileY,
+    tileWidth,
+    tileHeight,
+    paletteType = 'mandelbrot',
+  } = message.payload;
+  const startTime = performance.now();
+
+  const iterationData: number[][] = [];
+  const imageData = new ImageData(tileWidth, tileHeight);
+  const data = imageData.data;
+
+  const aspectRatio = width / height;
+  const scale = 3.0 / parameters.zoom;
+
+  // カラーパレットを生成
+  const palette = generatePalette(paletteType, 256);
+
+  for (let y = 0; y < tileHeight; y++) {
+    const row: number[] = [];
+    const globalY = tileY + y;
+
+    for (let x = 0; x < tileWidth; x++) {
+      const globalX = tileX + x;
+
+      // 複素数座標を計算
+      const real = parameters.centerX + ((globalX - width / 2) * scale * aspectRatio) / width;
+      const imaginary = parameters.centerY + ((globalY - height / 2) * scale) / height;
+
+      // Mandelbrot計算
+      const iterations = calculateMandelbrotPoint(
+        real,
+        imaginary,
+        parameters.iterations,
+        parameters.escapeRadius
+      );
+
+      row.push(iterations);
+
+      // カラーを設定
+      const pixelIndex = (y * tileWidth + x) * 4;
+
+      if (iterations === parameters.iterations) {
+        // 集合内の点は黒
+        data[pixelIndex] = 0;
+        data[pixelIndex + 1] = 0;
+        data[pixelIndex + 2] = 0;
+        data[pixelIndex + 3] = 255;
+      } else {
+        // カラーパレットから色を取得
+        const colorIndex = Math.floor((iterations / parameters.iterations) * (palette.length - 1));
+        const color = palette[colorIndex];
+        data[pixelIndex] = color[0]; // R
+        data[pixelIndex + 1] = color[1]; // G
+        data[pixelIndex + 2] = color[2]; // B
+        data[pixelIndex + 3] = color[3]; // A
+      }
+    }
+
+    iterationData.push(row);
+
+    // プログレス報告（10行ごと）
+    if (y % 10 === 0) {
+      const progress = y / tileHeight;
+      self.postMessage({
+        id: message.id,
+        type: 'progress',
+        payload: {
+          progress,
+          tileIndex: 0, // タイルインデックスは外部で管理
+        },
+      } satisfies ProgressMessage);
+    }
+  }
+
+  const renderTime = performance.now() - startTime;
+
+  return {
+    id: message.id,
+    type: 'complete',
+    payload: {
+      imageData,
+      iterationData,
+      renderTime,
+      tileX,
+      tileY,
+    },
+  };
+}
+
+/**
+ * カラーパレットを生成
+ */
+function generatePalette(type: string, steps: number): number[][] {
+  const colors: number[][] = [];
+
+  switch (type) {
+    case 'hot':
+      for (let i = 0; i < steps; i++) {
+        const t = i / (steps - 1);
+        const r = Math.min(255, Math.floor(255 * t * 3));
+        const g = Math.min(255, Math.max(0, Math.floor(255 * (3 * t - 1))));
+        const b = Math.min(255, Math.max(0, Math.floor(255 * (3 * t - 2))));
+        colors.push([r, g, b, 255]);
+      }
+      break;
+
+    case 'cool':
+      for (let i = 0; i < steps; i++) {
+        const t = i / (steps - 1);
+        const r = Math.floor(255 * t);
+        const g = Math.floor(255 * (1 - t));
+        const b = 255;
+        colors.push([r, g, b, 255]);
+      }
+      break;
+
+    case 'rainbow':
+      for (let i = 0; i < steps; i++) {
+        const hue = (i / steps) * 360;
+        const [r, g, b] = hslToRgb(hue, 100, 50);
+        colors.push([r, g, b, 255]);
+      }
+      break;
+
+    case 'fire':
+      for (let i = 0; i < steps; i++) {
+        const t = i / (steps - 1);
+        if (t < 0.5) {
+          const s = t * 2;
+          colors.push([Math.floor(s * 255), 0, 0, 255]);
+        } else {
+          const s = (t - 0.5) * 2;
+          colors.push([255, Math.floor(s * 255), Math.floor(s * 100), 255]);
+        }
+      }
+      break;
+
+    case 'ocean':
+      for (let i = 0; i < steps; i++) {
+        const t = i / (steps - 1);
+        if (t < 0.5) {
+          const s = t * 2;
+          colors.push([0, Math.floor(s * 100), Math.floor(50 + s * 205), 255]);
+        } else {
+          const s = (t - 0.5) * 2;
+          colors.push([Math.floor(s * 100), Math.floor(100 + s * 155), 255, 255]);
+        }
+      }
+      break;
+
+    case 'sunset':
+      for (let i = 0; i < steps; i++) {
+        const t = i / (steps - 1);
+        if (t < 0.3) {
+          const s = t / 0.3;
+          colors.push([Math.floor(50 + s * 205), Math.floor(s * 50), Math.floor(s * 100), 255]);
+        } else if (t < 0.7) {
+          const s = (t - 0.3) / 0.4;
+          colors.push([255, Math.floor(50 + s * 165), Math.floor(100 + s * 55), 255]);
+        } else {
+          const s = (t - 0.7) / 0.3;
+          colors.push([255, Math.floor(215 + s * 40), Math.floor(155 + s * 100), 255]);
+        }
+      }
+      break;
+
+    case 'grayscale':
+      for (let i = 0; i < steps; i++) {
+        const value = Math.floor((i / (steps - 1)) * 255);
+        colors.push([value, value, value, 255]);
+      }
+      break;
+
+    default: // 'mandelbrot'
+      for (let i = 0; i < steps; i++) {
+        const t = i / (steps - 1);
+
+        if (t < 0.16) {
+          const s = t / 0.16;
+          colors.push([Math.floor(s * 66), Math.floor(s * 30), Math.floor(s * 15), 255]);
+        } else if (t < 0.42) {
+          const s = (t - 0.16) / 0.26;
+          colors.push([
+            Math.floor(66 + s * (25 - 66)),
+            Math.floor(30 + s * (7 - 30)),
+            Math.floor(15 + s * (26 - 15)),
+            255,
+          ]);
+        } else if (t < 0.6425) {
+          const s = (t - 0.42) / 0.2225;
+          colors.push([
+            Math.floor(25 + s * (9 - 25)),
+            Math.floor(7 + s * (1 - 7)),
+            Math.floor(26 + s * (47 - 26)),
+            255,
+          ]);
+        } else if (t < 0.8575) {
+          const s = (t - 0.6425) / 0.215;
+          colors.push([
+            Math.floor(9 + s * (2 - 9)),
+            Math.floor(1 + s * (4 - 1)),
+            Math.floor(47 + s * (73 - 47)),
+            255,
+          ]);
+        } else {
+          const s = (t - 0.8575) / 0.1425;
+          colors.push([
+            Math.floor(2 + s * (0 - 2)),
+            Math.floor(4 + s * (7 - 4)),
+            Math.floor(73 + s * (100 - 73)),
+            255,
+          ]);
+        }
+      }
+      break;
+  }
+
+  return colors;
+}
+
+/**
+ * HSLからRGBに変換
+ */
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  h = h / 360;
+  s = s / 100;
+  l = l / 100;
+
+  const hue2rgb = (p: number, q: number, t: number): number => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+
+  let r: number, g: number, b: number;
+
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+// Worker メッセージハンドラー
+self.addEventListener('message', (event: MessageEvent<WorkerMessage>) => {
+  const message = event.data;
+
+  try {
+    switch (message.type) {
+      case 'render': {
+        const renderMessage = message as RenderMessage;
+        const result = renderTile(renderMessage);
+        self.postMessage(result);
+        break;
+      }
+
+      default:
+        self.postMessage({
+          id: message.id,
+          type: 'error',
+          payload: {
+            error: `Unknown message type: ${message.type}`,
+          },
+        } satisfies ErrorMessage);
+    }
+  } catch (error) {
+    self.postMessage({
+      id: message.id,
+      type: 'error',
+      payload: {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+    } satisfies ErrorMessage);
+  }
+});
+
+// Worker初期化完了を通知
+self.postMessage({
+  id: 'init',
+  type: 'complete',
+  payload: {
+    message: 'Worker initialized successfully',
+  },
+});

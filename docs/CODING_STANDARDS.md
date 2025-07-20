@@ -2,7 +2,7 @@
 
 ## 1. 概要
 
-本プロジェクトでは、**Biome v2.1.1** を使用してコードの品質と一貫性を保ちます。
+本プロジェクトでは、**Biome v2.1.2** を使用してコードの品質と一貫性を保ちます。
 この規約書は、チーム開発における統一されたコーディングスタイルと最適な開発プラクティスを定義します。
 
 ## 2. ツール設定
@@ -11,7 +11,7 @@
 
 ```json
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -19,14 +19,16 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": [
-      "**/node_modules/**",
-      "**/dist/**",
-      "**/build/**",
-      "**/.next/**",
-      "**/coverage/**",
-      "**/*.wasm",
-      "**/pkg/**"
+    "includes": [
+      "**",
+      "!**/node_modules/**",
+      "!**/dist/**",
+      "!**/build/**",
+      "!**/.astro/**",
+      "!**/coverage/**",
+      "!**/*.wasm",
+      "!**/pkg/**",
+      "!**/.env*"
     ]
   },
   "formatter": {
@@ -37,14 +39,9 @@
     "lineEnding": "lf",
     "lineWidth": 100,
     "attributePosition": "auto",
-    "ignore": [
-      "**/generated/**",
-      "**/wasm/pkg/**"
-    ]
+    "includes": ["**", "!**/generated/**", "!**/wasm/pkg/**", "!**/.astro/**"]
   },
-  "organizeImports": {
-    "enabled": true
-  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
     "rules": {
@@ -53,49 +50,34 @@
         "recommended": true
       },
       "complexity": {
-        "recommended": true,
-        "noExtraBooleanCast": "error",
-        "noMultipleSpacesInRegularExpressionLiterals": "error",
-        "noUselessCatch": "error",
-        "noUselessConstructor": "error",
-        "noUselessLabel": "error",
-        "noUselessRename": "error",
-        "noUselessSwitchCase": "error"
+        "recommended": true
       },
       "correctness": {
         "recommended": true,
-        "noConstAssign": "error",
-        "noConstantCondition": "error",
-        "noEmptyCharacterClassInRegex": "error",
-        "noEmptyPattern": "error",
-        "noGlobalObjectCalls": "error",
-        "noInvalidConstructorSuper": "error",
-        "noNewSymbol": "error",
-        "noNonoctalDecimalEscape": "error",
-        "noPrecisionLoss": "error",
-        "noSelfAssign": "error",
-        "noSetterReturn": "error",
-        "noSwitchDeclarations": "error",
-        "noUndeclaredVariables": "error",
-        "noUnreachable": "error",
-        "noUnreachableSuper": "error",
-        "useIsNan": "error",
-        "useValidForDirection": "error",
-        "useYield": "error"
+        "useExhaustiveDependencies": "warn"
+      },
+      "nursery": {
+        "useSortedClasses": "warn"
+      },
+      "performance": {
+        "recommended": true
       },
       "security": {
         "recommended": true
       },
       "style": {
         "recommended": true,
-        "noArguments": "error",
-        "noVar": "error",
-        "useConst": "error",
-        "useDefaultParameterLast": "error",
-        "useEnumInitializers": "error",
-        "useExponentiationOperator": "error",
-        "useFragmentSyntax": "error",
-        "useLiteralEnumMembers": "error",
+        "noDefaultExport": "off",
+        "noNonNullAssertion": "warn",
+        "noParameterProperties": "off",
+        "noShoutyConstants": "off",
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "requireAscii": true,
+            "filenameCases": ["kebab-case", "PascalCase"]
+          }
+        },
         "useNamingConvention": {
           "level": "error",
           "options": {
@@ -121,40 +103,12 @@
               }
             ]
           }
-        },
-        "useNumericLiterals": "error",
-        "useShorthandFunctionType": "error",
-        "useSingleVarDeclarator": "error",
-        "useTemplate": "error"
+        }
       },
       "suspicious": {
         "recommended": true,
-        "noArrayIndexKey": "error",
-        "noAssignInExpressions": "error",
-        "noAsyncPromiseExecutor": "error",
-        "noCatchAssign": "error",
-        "noClassAssign": "error",
-        "noCommentText": "error",
-        "noCompareNegZero": "error",
-        "noControlCharactersInRegex": "error",
-        "noDebugger": "error",
-        "noDuplicateCase": "error",
-        "noDuplicateClassMembers": "error",
-        "noDuplicateObjectKeys": "error",
-        "noDuplicateParameters": "error",
-        "noEmptyBlockStatements": "error",
-        "noExplicitAny": "warn",
-        "noFallthroughSwitchClause": "error",
-        "noFunctionAssign": "error",
-        "noGlobalAssign": "error",
-        "noImportAssign": "error",
-        "noMisleadingCharacterClass": "error",
-        "noPrototypeBuiltins": "error",
-        "noRedeclare": "error",
-        "noShadowRestrictedNames": "error",
-        "noUnsafeNegation": "error",
-        "useGetterReturn": "error",
-        "useValidTypeof": "error"
+        "noConsole": "warn",
+        "noExplicitAny": "warn"
       }
     }
   },
@@ -171,15 +125,68 @@
       "attributePosition": "auto"
     }
   },
+  "json": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineWidth": 100,
+      "trailingCommas": "none"
+    },
+    "parser": {
+      "allowComments": true,
+      "allowTrailingCommas": false
+    }
+  },
+  "css": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineWidth": 100
+    }
+  },
   "overrides": [
     {
-      "include": ["*.ts", "*.tsx"],
+      "includes": ["*.ts", "*.tsx"],
       "linter": {
         "rules": {
           "correctness": {
             "noUndeclaredVariables": "off"
           }
         }
+      }
+    },
+    {
+      "includes": ["*.astro"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useNamingConvention": "off"
+          },
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.config.*", "**/vite.config.*", "**/astro.config.*"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/wasm/**/*"],
+      "linter": {
+        "enabled": false
+      },
+      "formatter": {
+        "enabled": false
       }
     }
   ]

@@ -48,12 +48,7 @@
       "@/wasm/*": ["./src/wasm/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "*.ts",
-    "*.astro",
-    ".astro/types.d.ts"
-  ],
+  "include": ["src/**/*", "*.ts", "*.astro", ".astro/types.d.ts"],
   "exclude": [
     "node_modules",
     "dist",

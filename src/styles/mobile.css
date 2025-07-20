@@ -1,0 +1,225 @@
+/* モバイル向けスタイル調整 */
+
+/* 安全エリア対応 */
+.mobile-app {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* ビューポート単位の改善 */
+.mobile-app {
+  /* フォールバック */
+  height: 100vh;
+  /* 動的ビューポート高 (iOS Safari対応) */
+  height: 100dvh;
+}
+
+/* スライダーのタッチ対応 */
+.slider {
+  @apply touch-pan-x;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-track {
+  @apply bg-gray-600 rounded-full;
+  height: 8px;
+}
+
+.slider::-webkit-slider-thumb {
+  @apply w-6 h-6 bg-primary-600 rounded-full border-0 cursor-pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider::-moz-range-track {
+  @apply bg-gray-600 rounded-full border-0;
+  height: 8px;
+}
+
+.slider::-moz-range-thumb {
+  @apply w-6 h-6 bg-primary-600 rounded-full border-0 cursor-pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* タッチ操作の最適化 */
+.touch-optimized {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* キャンバス用のタッチ設定 */
+canvas {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* モバイル向けタッチ操作 */
+@media (max-width: 1023px) {
+  /* タッチ対応のためのボタンサイズ調整 */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* スクロール慣性 */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* フォーカス状態の調整 */
+  button:focus,
+  input:focus,
+  select:focus {
+    @apply outline-none ring-2 ring-primary-500 ring-opacity-50;
+  }
+
+  /* FABのz-indexとポジション調整 */
+  .fab {
+    position: fixed;
+    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    right: calc(1.5rem + env(safe-area-inset-right));
+    z-index: 50;
+  }
+
+  /* ボトムシートの安全エリア対応 */
+  .bottom-sheet {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* モバイルでのホバー効果を無効化 */
+  @media (hover: none) {
+    .hover\:bg-gray-600\/50:hover {
+      background-color: inherit;
+    }
+
+    .hover\:bg-gray-700\/90:hover {
+      background-color: inherit;
+    }
+
+    .hover\:bg-primary-700:hover {
+      background-color: inherit;
+    }
+  }
+
+  /* ピンチズーム無効化（キャンバス以外） */
+  .no-zoom {
+    touch-action: manipulation;
+  }
+
+  /* 長押しメニュー無効化 */
+  .no-context-menu {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* パフォーマンスメトリクスのモバイル表示 */
+@media (max-width: 1023px) {
+  .performance-metrics {
+    @apply text-xs space-y-0.5;
+  }
+
+  .performance-metrics > div {
+    @apply truncate;
+  }
+}
+
+/* ボトムシートのアニメーション改善 */
+.bottom-sheet-content {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+/* ドラッグハンドル */
+.drag-handle {
+  cursor: grab;
+  touch-action: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* ハードウェア加速 */
+.hw-accelerated {
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+/* 縦向き・横向き対応 */
+@media (orientation: landscape) and (max-height: 500px) {
+  .mobile-landscape {
+    /* 横向きモードでのレイアウト調整 */
+    font-size: 0.875rem;
+  }
+  
+  .mobile-landscape .bottom-sheet {
+    height: 70vh;
+    min-height: 300px;
+  }
+}
+
+@media (orientation: portrait) {
+  .mobile-portrait {
+    /* 縦向きモードでのレイアウト調整 */
+  }
+}
+
+/* スライダーのレスポンシブ調整 */
+@media (max-width: 480px) {
+  .slider::-webkit-slider-thumb {
+    @apply w-7 h-7;
+    margin-top: -5.5px;
+  }
+  
+  .slider::-moz-range-thumb {
+    @apply w-7 h-7;
+  }
+}
+
+/* テキスト選択の無効化（UI要素） */
+.ui-element {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 慣性スクロール最適化 */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* モバイルでのキャンバス最適化 */
+@media (max-width: 1023px) {
+  .mobile-canvas-container {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  
+  .mobile-canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    max-width: none;
+    max-height: none;
+  }
+}
