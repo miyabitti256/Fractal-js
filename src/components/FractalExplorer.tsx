@@ -4,6 +4,7 @@ import { useFractalInteraction } from '@/hooks/useFractalInteraction';
 import DesktopControlPanel from './fractal/DesktopControlPanel';
 import FractalCanvas, { type FractalCanvasRef } from './fractal/FractalCanvas';
 import MobileBottomSheet from './fractal/MobileBottomSheet';
+import JuliaDualView from './fractal/JuliaDualView';
 import type { FractalType, TabId } from '@/types/fractal';
 
 interface FractalExplorerProps {
@@ -98,17 +99,17 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
 
   // 初期レンダリング
   useEffect(() => {
-    if (!fractalEngine.isLoading && canvasRef.current) {
+    if (!fractalEngine.isLoading && canvasRef.current && !fractalEngine.isDualView) {
       const context = canvasRef.current.getContext();
       if (context) {
         fractalEngine.renderFractal(context, canvasSize);
       }
     }
-  }, [fractalEngine.isLoading, canvasSize]);
+  }, [fractalEngine.isLoading, canvasSize, fractalEngine.isDualView]);
 
-  // パラメータ変更時の再レンダリング
+  // パラメータ変更時の再レンダリング（デュアルビューモード以外）
   useEffect(() => {
-    if (fractalEngine.isLoading) return;
+    if (fractalEngine.isLoading || fractalEngine.isDualView) return;
 
     const timeoutId = setTimeout(() => {
       const context = canvasRef.current?.getContext();
@@ -125,10 +126,23 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
     fractalEngine.useWebGPU,
     fractalEngine.useMultiThread,
     fractalEngine.isLoading,
+    fractalEngine.isDualView,
   ]);
 
   // エンジン情報の取得（メモ化）
   const engineInfo = useMemo(() => fractalEngine.getEngineInfo(), [fractalEngine.isLoading]);
+
+  // デュアルビューモードの場合は専用コンポーネントを表示
+  if (fractalEngine.isDualView) {
+    return (
+      <div className={`h-screen ${className} bg-gray-900`}>
+        <JuliaDualView
+          onParameterChange={fractalEngine.updateDualViewC}
+          onExitDualView={fractalEngine.exitDualView}
+        />
+      </div>
+    );
+  }
 
   if (isMobile) {
     return (
@@ -202,6 +216,20 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
           </div>
         </div>
 
+        {/* デュアルビューモードボタン（ジュリア集合のみ） */}
+        {fractalEngine.fractalType === 'julia' && (
+          <button
+            onClick={fractalEngine.enterDualView}
+            className="absolute z-10 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs transition-colors"
+            style={{
+              top: `calc(1rem + env(safe-area-inset-top))`,
+              right: `calc(1rem + env(safe-area-inset-right))`,
+            }}
+          >
+            デュアルビュー
+          </button>
+        )}
+
         {/* フローティングアクションボタン (FAB) */}
         <button
           onClick={() =>
@@ -250,6 +278,9 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
           performanceMetrics={fractalEngine.performanceMetrics}
           webGPUSupported={engineInfo.webGPUSupported}
           availableWorkers={engineInfo.availableWorkers}
+          // デュアルビューモード関連の追加
+          isDualViewAvailable={fractalEngine.fractalType === 'julia'}
+          onEnterDualView={fractalEngine.enterDualView}
         />
       </div>
     );
@@ -281,6 +312,9 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
         performanceMetrics={fractalEngine.performanceMetrics}
         webGPUSupported={engineInfo.webGPUSupported}
         availableWorkers={engineInfo.availableWorkers}
+        // デュアルビューモード関連の追加
+        isDualViewAvailable={fractalEngine.fractalType === 'julia'}
+        onEnterDualView={fractalEngine.enterDualView}
       />
 
       {/* Canvas Area */}
@@ -330,6 +364,16 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
 
         {/* Overlay Controls */}
         <div className="absolute top-4 right-4 space-y-2">
+          {/* デュアルビューモードボタン（ジュリア集合のみ） */}
+          {fractalEngine.fractalType === 'julia' && (
+            <button
+              onClick={fractalEngine.enterDualView}
+              className="w-full p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+              title="デュアルビューモード"
+            >
+              デュアルビュー
+            </button>
+          )}
           <button
             onClick={fractalEngine.resetView}
             className="p-2 bg-gray-800/90 text-white rounded-lg hover:bg-gray-700/90 transition-colors"

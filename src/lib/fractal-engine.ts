@@ -66,6 +66,7 @@ export class FractalEngine {
   private totalRenderTime = 0;
   private initializationPromise: Promise<void>;
   private isInitialized = false;
+  private currentRenderingTasks = new Map<string, Promise<RenderResult>>();
 
   constructor() {
     this.initializationPromise = this.initializeAsync();
@@ -182,38 +183,65 @@ export class FractalEngine {
     parameters: AllFractalParameters,
     options: RenderOptions
   ): Promise<RenderResult> {
-    const startTime = performance.now();
-
-    let result: RenderResult;
-
-    // レンダリング方法を決定
-    if (
-      options.useWebGPU &&
-      this.isWebGPUSupported &&
-      this.webgpuEngine?.initialized &&
-      fractalType === 'mandelbrot'
-    ) {
-      // WebGPUは現在マンデルブロ集合のみ対応
-      result = await this.renderWithWebGPU(parameters as MandelbrotParameters, options);
-    } else if (options.useWorkers && this.workerPool.length > 0) {
-      result = await this.renderWithWorkers(fractalType, parameters, options);
+    // 軽量な重複レンダリング防止のためのキーを生成（JSON.stringify回避）
+    let renderKey: string;
+    if (fractalType === 'julia') {
+      const juliaParams = parameters as JuliaParameters;
+      renderKey = `julia_${juliaParams.c.real.toFixed(4)}_${juliaParams.c.imag.toFixed(4)}_${juliaParams.iterations}_${options.width}_${options.height}`;
     } else {
-      result = await this.renderWithCPU(fractalType, parameters, options);
+      renderKey = `${fractalType}_${parameters.iterations}_${options.width}_${options.height}`;
+    }
+    
+    // 同じ内容のレンダリングが既に実行中の場合は、その結果を返す
+    const existingTask = this.currentRenderingTasks.get(renderKey);
+    if (existingTask) {
+      return existingTask;
     }
 
-    const renderTime = performance.now() - startTime;
+    const startTime = performance.now();
 
-    // パフォーマンス統計を更新
-    this.updatePerformanceStats(renderTime);
+    const renderTask = (async (): Promise<RenderResult> => {
+      try {
+        let result: RenderResult;
 
-    return {
-      ...result,
-      renderTime,
-      stats: {
-        ...result.stats,
-        performanceScore: this.calculatePerformanceScore(result.stats),
-      },
-    };
+        // レンダリング方法を決定
+        if (
+          options.useWebGPU &&
+          this.isWebGPUSupported &&
+          this.webgpuEngine?.initialized &&
+          fractalType === 'mandelbrot'
+        ) {
+          // WebGPUは現在マンデルブロ集合のみ対応
+          result = await this.renderWithWebGPU(parameters as MandelbrotParameters, options);
+        } else if (options.useWorkers && this.workerPool.length > 0) {
+          result = await this.renderWithWorkers(fractalType, parameters, options);
+        } else {
+          result = await this.renderWithCPU(fractalType, parameters, options);
+        }
+
+        const renderTime = performance.now() - startTime;
+
+        // パフォーマンス統計を更新
+        this.updatePerformanceStats(renderTime);
+
+        return {
+          ...result,
+          renderTime,
+          stats: {
+            ...result.stats,
+            performanceScore: this.calculatePerformanceScore(result.stats),
+          },
+        };
+      } finally {
+        // タスク完了後にキャッシュから削除
+        this.currentRenderingTasks.delete(renderKey);
+      }
+    })();
+
+    // タスクをキャッシュに保存
+    this.currentRenderingTasks.set(renderKey, renderTask);
+
+    return renderTask;
   }
 
   /**
@@ -263,7 +291,24 @@ export class FractalEngine {
     parameters: AllFractalParameters,
     options: RenderOptions
   ): Promise<RenderResult> {
-    const { width, height, tileSize = 64, paletteType = 'rainbow' } = options;
+    const { width, height, paletteType = 'rainbow' } = options;
+    
+    // タイルサイズを動的に最適化（解像度とWorker数に基づく）
+    const workerCount = this.workerPool.length;
+    const totalPixels = width * height;
+    const pixelsPerWorker = totalPixels / workerCount;
+    
+    // 最適なタイルサイズを計算（高頻度レンダリング対応でタイルサイズを大きめに調整）
+    let tileSize: number;
+    if (pixelsPerWorker < 8192) { // 64x128以下
+      tileSize = 64;
+    } else if (pixelsPerWorker < 32768) { // 128x256以下
+      tileSize = 96;
+    } else if (pixelsPerWorker < 131072) { // 256x512以下
+      tileSize = 128;
+    } else {
+      tileSize = 160; // 大きめのタイルで通信オーバーヘッド削減
+    }
     
     // ニュートンフラクタルの場合も、ユーザーが選択したパレットタイプを尊重
     // ただし、デフォルトが指定されていない場合のみnewtonパレットを使用
@@ -276,7 +321,7 @@ export class FractalEngine {
     const totalTiles = tilesX * tilesY;
 
     console.log(
-      `🚀 マルチスレッドレンダリング開始 - ${this.workerPool.length}個のWorkerでタイル処理 (${totalTiles}タイル)`
+      `🚀 マルチスレッドレンダリング開始 - ${this.workerPool.length}個のWorkerでタイル処理 (${totalTiles}タイル, タイルサイズ: ${tileSize}x${tileSize})`
     );
 
     // 最終画像を作成
@@ -410,10 +455,10 @@ export class FractalEngine {
 
       iterationData.push(row);
 
-      if (y % 5 === 0) {
+      // 進行報告（setTimeoutなしで高速化）
+      if (y % 20 === 0) {
         const progress = y / height;
         options.onProgress?.(progress);
-        await new Promise((resolve) => setTimeout(resolve, 1));
       }
     }
 
@@ -464,10 +509,10 @@ export class FractalEngine {
 
       iterationData.push(row);
 
-      if (y % 5 === 0) {
+      // 進行報告（setTimeoutなしで高速化）
+      if (y % 20 === 0) {
         const progress = y / height;
         options.onProgress?.(progress);
-        await new Promise((resolve) => setTimeout(resolve, 1));
       }
     }
 
@@ -517,10 +562,10 @@ export class FractalEngine {
 
       iterationData.push(row);
 
-      if (y % 5 === 0) {
+      // 進行報告（setTimeoutなしで高速化）
+      if (y % 20 === 0) {
         const progress = y / height;
         options.onProgress?.(progress);
-        await new Promise((resolve) => setTimeout(resolve, 1));
       }
     }
 
@@ -585,10 +630,10 @@ export class FractalEngine {
 
       iterationData.push(row);
 
-      if (y % 5 === 0) {
+      // 進行報告（setTimeoutなしで高速化）
+      if (y % 20 === 0) {
         const progress = y / height;
         options.onProgress?.(progress);
-        await new Promise((resolve) => setTimeout(resolve, 1));
       }
     }
 

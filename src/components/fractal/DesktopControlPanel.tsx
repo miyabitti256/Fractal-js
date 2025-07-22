@@ -33,6 +33,9 @@ interface DesktopControlPanelProps {
   performanceMetrics: PerformanceMetrics | null;
   webGPUSupported: boolean;
   availableWorkers: number;
+  // デュアルビューモード関連
+  isDualViewAvailable: boolean;
+  onEnterDualView: () => void;
 }
 
 const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
@@ -58,6 +61,8 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
   performanceMetrics,
   webGPUSupported,
   availableWorkers,
+  isDualViewAvailable,
+  onEnterDualView,
 }) => {
   const fractalTypes: Array<{ value: FractalType; label: string; color: string }> = [
     { value: 'mandelbrot', label: 'Mandelbrot Set', color: 'text-fractal-mandelbrot' },
@@ -344,7 +349,17 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
         </div>
 
         {/* Controls */}
-        <div className="mb-6">
+        <div className="mb-6 space-y-3">
+          {/* デュアルビューボタン（ジュリア集合のみ） */}
+          {isDualViewAvailable && (
+            <button
+              onClick={onEnterDualView}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              デュアルビューモード
+            </button>
+          )}
+          
           <button
             onClick={resetView}
             className="w-full bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors"

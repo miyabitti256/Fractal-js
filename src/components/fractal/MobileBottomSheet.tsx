@@ -29,6 +29,9 @@ interface MobileBottomSheetProps {
   performanceMetrics: PerformanceMetrics | null;
   webGPUSupported: boolean;
   availableWorkers: number;
+  // デュアルビューモード関連
+  isDualViewAvailable: boolean;
+  onEnterDualView: () => void;
 }
 
 const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
@@ -56,6 +59,8 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   performanceMetrics,
   webGPUSupported,
   availableWorkers,
+  isDualViewAvailable,
+  onEnterDualView,
 }) => {
   // ドラッグ操作用のstate
   const [isDragging, setIsDragging] = useState(false);
@@ -227,6 +232,16 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                   </>
                 )}
               </div>
+
+              {/* デュアルビューボタン（ジュリア集合のみ） */}
+              {isDualViewAvailable && (
+                <button
+                  onClick={onEnterDualView}
+                  className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-medium transition-colors"
+                >
+                  デュアルビューモード
+                </button>
+              )}
 
               <button
                 onClick={resetView}

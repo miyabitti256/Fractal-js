@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FractalEngine, type PerformanceMetrics } from '@/lib/fractal-engine';
 import { getDefaultParameters } from '@/lib/fractal-utils';
-import type { AllFractalParameters, FractalType } from '@/types/fractal';
+import type { AllFractalParameters, FractalType, Complex, JuliaParameters } from '@/types/fractal';
 
 export const useFractalEngine = () => {
   const engineRef = useRef<FractalEngine | null>(null);
@@ -20,6 +20,10 @@ export const useFractalEngine = () => {
   const [enableAnimation, setEnableAnimation] = useState(false);
   const [paletteType, setPaletteType] = useState('rainbow');
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
+
+  // デュアルビューモード用の状態
+  const [isDualView, setIsDualView] = useState(false);
+  const [dualViewC, setDualViewC] = useState<Complex>({ real: -0.7, imag: 0.27015 });
 
   // フラクタルタイプ変更時のパラメータ更新
   useEffect(() => {
@@ -142,6 +146,40 @@ export const useFractalEngine = () => {
     setParameters(getDefaultParameters(fractalType));
   }, [fractalType]);
 
+  // デュアルビューモード関連の関数
+  const enterDualView = useCallback(() => {
+    if (fractalType !== 'julia') {
+      setFractalType('julia');
+    }
+    setIsDualView(true);
+    // デュアルビューモード時もWebGPU/Workerを有効化（パフォーマンス重視）
+    setUseWebGPU(true);
+    setUseMultiThread(true);
+  }, [fractalType]);
+
+  const exitDualView = useCallback(() => {
+    setIsDualView(false);
+    // デュアルビューモード終了時にジュリア集合のcパラメータを適用
+    if (fractalType === 'julia') {
+      const juliaParams = parameters as JuliaParameters;
+      setParameters({
+        ...juliaParams,
+        c: dualViewC,
+        zoom: 1, // 探索モードでは初期ズームレベルから開始
+        centerX: 0,
+        centerY: 0,
+        iterations: Math.min(juliaParams.iterations, 500), // 適度なイテレーション数
+      });
+    }
+    // パフォーマンス設定を維持
+    setUseWebGPU(true);
+    setUseMultiThread(true);
+  }, [fractalType, parameters, dualViewC]);
+
+  const updateDualViewC = useCallback((c: Complex) => {
+    setDualViewC(c);
+  }, []);
+
   // クリーンアップ
   useEffect(() => {
     return () => {
@@ -180,6 +218,13 @@ export const useFractalEngine = () => {
     paletteType,
     setPaletteType,
     performanceMetrics,
+
+    // デュアルビューモード関連
+    isDualView,
+    dualViewC,
+    enterDualView,
+    exitDualView,
+    updateDualViewC,
 
     // Functions
     initializeEngine,

@@ -1,9 +1,10 @@
+/* モバイル対応スタイル */
+@import "./mobile.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* モバイル対応スタイル */
-@import "./mobile.css";
 
 /* カスタムスタイル */
 html {
