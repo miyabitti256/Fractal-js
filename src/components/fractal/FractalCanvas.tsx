@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import type { AllFractalParameters } from '@/types/fractal';
 
 interface FractalCanvasProps {
@@ -21,7 +21,7 @@ const FractalCanvas = forwardRef<FractalCanvasRef, FractalCanvasProps>(
   (
     {
       canvasSize,
-      parameters,
+      // parameters,
       onPointerDown,
       onPointerMove,
       onPointerUp,
@@ -48,7 +48,7 @@ const FractalCanvas = forwardRef<FractalCanvasRef, FractalCanvasProps>(
         ref={canvasRef}
         width={canvasSize.width}
         height={canvasSize.height}
-        className={`w-full h-full cursor-crosshair ${className}`}
+        className={`h-full w-full cursor-crosshair ${className}`}
         style={{
           imageRendering: 'pixelated',
           maxWidth: '100%',

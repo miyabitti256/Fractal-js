@@ -2,10 +2,8 @@ import type { PerformanceMetrics } from '@/lib/fractal-engine';
 import { ColorPalette } from '@/lib/fractal-utils';
 import type {
   AllFractalParameters,
-  BurningShipParameters,
   FractalType,
   JuliaParameters,
-  MandelbrotParameters,
   NewtonParameters,
 } from '@/types/fractal';
 import NewtonRootEditor from './NewtonRootEditor';
@@ -81,31 +79,32 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
   ];
 
   return (
-    <div className="w-full lg:w-80 bg-gray-800/90 backdrop-blur-sm border-r border-gray-700 overflow-y-auto">
+    <div className="w-full overflow-y-auto border-gray-700 border-r bg-gray-800/90 backdrop-blur-sm lg:w-80">
       <div className="p-6">
-        <h1 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+        <h1 className="mb-6 flex items-center gap-2 font-bold text-2xl text-white">
           <span className="text-primary-400">∞</span>
           Fractal Explorer
         </h1>
 
         {/* Fractal Type Selector */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-3">フラクタルタイプ</label>
+          <div className="mb-3 block font-medium text-gray-300 text-sm">フラクタルタイプ</div>
           <div className="space-y-2">
             {fractalTypes.map((type) => (
               <button
+                type="button"
                 key={type.value}
                 onClick={() => setFractalType(type.value)}
-                className={`w-full text-left px-3 py-2 rounded-lg border transition-all ${
+                className={`w-full rounded-lg border px-3 py-2 text-left transition-all ${
                   fractalType === type.value
-                    ? 'bg-primary-600 border-primary-500 text-white'
-                    : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-600/50'
+                    ? 'border-primary-500 bg-primary-600 text-white'
+                    : 'border-gray-600 bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
                 }`}
                 disabled={!['mandelbrot', 'julia', 'burning-ship', 'newton'].includes(type.value)}
               >
                 <span className={type.color}>●</span> {type.label}
                 {!['mandelbrot', 'julia', 'burning-ship', 'newton'].includes(type.value) && (
-                  <span className="text-xs text-gray-500 ml-2">(準備中)</span>
+                  <span className="ml-2 text-gray-500 text-xs">(準備中)</span>
                 )}
               </button>
             ))}
@@ -114,14 +113,14 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
 
         {/* Parameters */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-3">パラメータ</label>
+          <div className="mb-3 block font-medium text-gray-300 text-sm">パラメータ</div>
           <div className="space-y-3">
             {/* 共通パラメータ: Zoom */}
             {'zoom' in parameters && (
               <div>
-                <label className="block text-xs text-gray-400 mb-1">
+                <div className="mb-1 block text-gray-400 text-xs">
                   Zoom: {parameters.zoom.toExponential(2)}
-                </label>
+                </div>
                 <input
                   type="range"
                   min="0.5"
@@ -129,7 +128,7 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
                   step="0.5"
                   value={Math.min(500, parameters.zoom)}
                   onChange={(e) => updateZoom(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                  className="slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-700"
                 />
               </div>
             )}
@@ -137,9 +136,9 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
             {/* 共通パラメータ: Iterations */}
             {'iterations' in parameters && (
               <div>
-                <label className="block text-xs text-gray-400 mb-1">
+                <div className="mb-1 block text-gray-400 text-xs">
                   Iterations: {parameters.iterations}
-                </label>
+                </div>
                 <input
                   type="number"
                   min="10"
@@ -148,11 +147,11 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
                   value={parameters.iterations}
                   onChange={(e) => {
                     const value = parseInt(e.target.value);
-                    if (!isNaN(value)) {
+                    if (!Number.isNaN(value)) {
                       updateIterations(value);
                     }
                   }}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-gray-300 focus:border-primary-500 focus:outline-none"
+                  className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-gray-300 focus:border-primary-500 focus:outline-none"
                   placeholder="10 〜 100000"
                 />
               </div>
@@ -162,9 +161,9 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
             {fractalType === 'julia' && 'c' in parameters && (
               <>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">
+                  <div className="mb-1 block text-gray-400 text-xs">
                     Parameter C (Real): {(parameters as JuliaParameters).c.real.toFixed(3)}
-                  </label>
+                  </div>
                   <input
                     type="range"
                     min="-2"
@@ -179,13 +178,13 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
                         c: newC,
                       } as Partial<AllFractalParameters>);
                     }}
-                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                    className="slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-700"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">
+                  <div className="mb-1 block text-gray-400 text-xs">
                     Parameter C (Imaginary): {(parameters as JuliaParameters).c.imag.toFixed(3)}
-                  </label>
+                  </div>
                   <input
                     type="range"
                     min="-2"
@@ -200,7 +199,7 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
                         c: newC,
                       } as Partial<AllFractalParameters>);
                     }}
-                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                    className="slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-700"
                   />
                 </div>
               </>
@@ -210,9 +209,9 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
             {fractalType === 'newton' && 'tolerance' in parameters && (
               <>
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1">
+                  <div className="mb-1 block text-gray-400 text-xs">
                     Tolerance: {(parameters as NewtonParameters).tolerance.toExponential(2)}
-                  </label>
+                  </div>
                   <input
                     type="range"
                     min="1e-10"
@@ -226,7 +225,7 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
                         tolerance: parseFloat(e.target.value),
                       } as Partial<AllFractalParameters>);
                     }}
-                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                    className="slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-700"
                   />
                 </div>
 
@@ -244,7 +243,7 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
 
         {/* Canvas Size */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-3">キャンバスサイズ</label>
+          <div className="mb-3 block font-medium text-gray-300 text-sm">キャンバスサイズ</div>
           <select
             value={`${canvasSize.width}x${canvasSize.height}`}
             onChange={(e) => {
@@ -253,7 +252,7 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
               const height = parseInt(parts[1] || '600', 10);
               setCanvasSize({ width, height });
             }}
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-gray-300"
+            className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-gray-300"
           >
             {canvasSizes.map((size) => (
               <option key={size.label} value={`${size.width}x${size.height}`}>
@@ -265,11 +264,11 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
 
         {/* Color Palette */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-3">カラーパレット</label>
+          <div className="mb-3 block font-medium text-gray-300 text-sm">カラーパレット</div>
           <select
             value={paletteType}
             onChange={(e) => setPaletteType(e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-gray-300"
+            className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-gray-300"
           >
             {ColorPalette.getPaletteNames().map((name) => (
               <option key={name} value={name}>
@@ -281,7 +280,7 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
 
         {/* Rendering Options */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-3">レンダリング設定</label>
+          <div className="mb-3 block font-medium text-gray-300 text-sm">レンダリング設定</div>
           <div className="space-y-3">
             <div>
               <label className="flex items-center">
@@ -291,11 +290,11 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
                   checked={useWebGPU}
                   onChange={(e) => setUseWebGPU(e.target.checked)}
                 />
-                <span className="ml-2 text-sm text-gray-300">
+                <span className="ml-2 text-gray-300 text-sm">
                   WebGPU加速 {webGPUSupported ? '✓' : '✗'}
                 </span>
               </label>
-              <p className="text-xs text-gray-500 ml-6">GPU並列計算で高速レンダリング</p>
+              <p className="ml-6 text-gray-500 text-xs">GPU並列計算で高速レンダリング</p>
             </div>
 
             <div>
@@ -306,11 +305,11 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
                   checked={useMultiThread}
                   onChange={(e) => setUseMultiThread(e.target.checked)}
                 />
-                <span className="ml-2 text-sm text-gray-300">
+                <span className="ml-2 text-gray-300 text-sm">
                   マルチスレッド ({availableWorkers} workers)
                 </span>
               </label>
-              <p className="text-xs text-gray-500 ml-6">Web Workersで並列CPU計算</p>
+              <p className="ml-6 text-gray-500 text-xs">Web Workersで並列CPU計算</p>
             </div>
 
             <div>
@@ -322,13 +321,13 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
                   onChange={(e) => setEnableAnimation(e.target.checked)}
                   disabled={true}
                 />
-                <span className="ml-2 text-sm text-gray-400">アニメーション (準備中)</span>
+                <span className="ml-2 text-gray-400 text-sm">アニメーション (準備中)</span>
               </label>
-              <p className="text-xs text-gray-500 ml-6">パラメータの時間的変化を表示</p>
+              <p className="ml-6 text-gray-500 text-xs">パラメータの時間的変化を表示</p>
             </div>
 
-            <div className="border-t border-gray-600 pt-2 space-y-1">
-              <p className="text-xs text-gray-400">
+            <div className="space-y-1 border-gray-600 border-t pt-2">
+              <p className="text-gray-400 text-xs">
                 <span className="font-medium">現在のモード:</span>{' '}
                 <span className="text-primary-400">
                   {useWebGPU && webGPUSupported
@@ -338,10 +337,10 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
                       : 'シングルスレッドCPU'}
                 </span>
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-gray-500 text-xs">
                 WebGPU: {webGPUSupported ? '✅ 利用可能' : '❌ 非対応'}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-gray-500 text-xs">
                 Workers: {availableWorkers}/{navigator.hardwareConcurrency || 'N/A'}
               </p>
             </div>
@@ -353,23 +352,25 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
           {/* デュアルビューボタン（ジュリア集合のみ） */}
           {isDualViewAvailable && (
             <button
+              type="button"
               onClick={onEnterDualView}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+              className="w-full rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
             >
               デュアルビューモード
             </button>
           )}
-          
+
           <button
+            type="button"
             onClick={resetView}
-            className="w-full bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors"
+            className="w-full rounded-lg bg-primary-600 px-4 py-2 text-white transition-colors hover:bg-primary-700"
           >
             ビューをリセット
           </button>
         </div>
 
         {/* Performance */}
-        <div className="text-xs text-gray-400 space-y-1">
+        <div className="space-y-1 text-gray-400 text-xs">
           <div>
             レンダリング進行:{' '}
             <span className="text-primary-400">{Math.round(renderProgress * 100)}%</span>
@@ -381,7 +382,7 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
             </span>
           </div>
           {performanceMetrics && (
-            <div className="border-t border-gray-600 pt-2 mt-2">
+            <div className="mt-2 border-gray-600 border-t pt-2">
               <div>
                 FPS: <span className="text-green-400">{performanceMetrics.fps.toFixed(1)}</span>
               </div>
@@ -409,7 +410,7 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
               </div>
             </div>
           )}
-          <div className="text-xs text-gray-500 mt-2">
+          <div className="mt-2 text-gray-500 text-xs">
             操作方法:
             <br />• ドラッグ: 移動
             <br />• ホイール: ズーム

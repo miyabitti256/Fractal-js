@@ -30,8 +30,14 @@ export default function NewtonRootEditor({
   // レスポンシブサイズ調整（useMemoで最適化）
   const isMobile = useMemo(() => typeof window !== 'undefined' && window.innerWidth < 768, []);
   // 実際のキャンバスサイズ - より大きなサイズを確保
-  const actualWidth = useMemo(() => isMobile ? Math.min(width, 320) : Math.min(width, 400), [isMobile, width]);
-  const actualHeight = useMemo(() => isMobile ? Math.min(height, 240) : Math.min(height, 300), [isMobile, height]);
+  const actualWidth = useMemo(
+    () => (isMobile ? Math.min(width, 320) : Math.min(width, 400)),
+    [isMobile, width]
+  );
+  const actualHeight = useMemo(
+    () => (isMobile ? Math.min(height, 240) : Math.min(height, 300)),
+    [isMobile, height]
+  );
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectionState, setSelectionState] = useState<SelectionState>({
     selectedRootIndex: -1,
@@ -243,9 +249,9 @@ export default function NewtonRootEditor({
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       const rootIndex = getRootAtPosition(x, y);
-      
+
       if (rootIndex >= 0) {
         // 根をタップした場合：根を選択または選択解除
         if (selectionState.selectedRootIndex === rootIndex) {
@@ -262,12 +268,12 @@ export default function NewtonRootEditor({
           const newComplex = screenToComplex(x, y);
           const newRoots = [...parameters.roots];
           newRoots[selectionState.selectedRootIndex] = newComplex;
-          
+
           updateParameters({
             ...parameters,
             roots: newRoots,
           });
-          
+
           // 移動後は選択解除
           setSelectionState({ selectedRootIndex: -1 });
         }
@@ -285,11 +291,11 @@ export default function NewtonRootEditor({
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       const rootIndex = getRootAtPosition(x, y);
       if (rootIndex >= 0) {
         canvas.setPointerCapture(e.pointerId);
-        
+
         setDragState({
           isDragging: true,
           rootIndex,
@@ -318,11 +324,11 @@ export default function NewtonRootEditor({
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       const newComplex = screenToComplex(x, y);
       const newRoots = [...parameters.roots];
       newRoots[dragState.rootIndex] = newComplex;
-      
+
       updateParameters({
         ...parameters,
         roots: newRoots,
@@ -334,19 +340,19 @@ export default function NewtonRootEditor({
   const handlePointerUp = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
       if (dragState.pointerId !== undefined && e.pointerId !== dragState.pointerId) return;
-      
+
       e.preventDefault();
       e.stopPropagation();
-      
+
       const canvas = canvasRef.current;
       if (canvas && dragState.pointerId !== undefined) {
         try {
           canvas.releasePointerCapture(dragState.pointerId);
-        } catch (error) {
+        } catch {
           // キャプチャが既に解放されている場合のエラーを無視
         }
       }
-      
+
       setDragState({
         isDragging: false,
         rootIndex: -1,
@@ -413,11 +419,11 @@ export default function NewtonRootEditor({
   }, [drawCanvas]);
 
   return (
-    <div className="bg-gray-800 rounded-lg flex flex-col">
-      <h3 className="text-sm font-semibold text-gray-200 mb-2 flex-shrink-0">
+    <div className="flex flex-col rounded-lg bg-gray-800">
+      <h3 className="mb-2 flex-shrink-0 font-semibold text-gray-200 text-sm">
         インタラクティブ根エディター
       </h3>
-      <div className="relative flex-1 flex flex-col">
+      <div className="relative flex flex-1 flex-col">
         <canvas
           ref={canvasRef}
           width={actualWidth}
@@ -428,14 +434,14 @@ export default function NewtonRootEditor({
           onPointerLeave={!isMobile ? handlePointerUp : undefined}
           onDoubleClick={handleDoubleClick}
           onContextMenu={handleContextMenu}
-          className="border border-gray-600 rounded cursor-pointer mx-auto block flex-shrink-0"
+          className="mx-auto block flex-shrink-0 cursor-pointer rounded border border-gray-600"
           style={{ touchAction: 'none' }} // タッチデバイス用
         />
 
         {/* スクロール可能なコンテンツエリア */}
-        <div className="mt-2 max-h-32 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 flex-shrink-0">
+        <div className="scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 mt-2 max-h-32 flex-shrink-0 space-y-2 overflow-y-auto">
           {/* 操作説明 */}
-          <div className="text-xs text-gray-400 space-y-1">
+          <div className="space-y-1 text-gray-400 text-xs">
             {isMobile ? (
               <>
                 <div>• 根をタップして選択</div>
@@ -452,8 +458,9 @@ export default function NewtonRootEditor({
           </div>
 
           {/* プリセットボタン */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button
+              type="button"
               onClick={() => {
                 const newRoots = [
                   { real: 1, imag: 0 },
@@ -462,11 +469,12 @@ export default function NewtonRootEditor({
                 ];
                 updateParameters({ ...parameters, roots: newRoots });
               }}
-              className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-xs"
+              className="rounded bg-blue-600 px-2 py-1 text-white text-xs hover:bg-blue-500"
             >
               z³-1
             </button>
             <button
+              type="button"
               onClick={() => {
                 const newRoots = [
                   { real: 1, imag: 0 },
@@ -476,11 +484,12 @@ export default function NewtonRootEditor({
                 ];
                 updateParameters({ ...parameters, roots: newRoots });
               }}
-              className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-xs"
+              className="rounded bg-blue-600 px-2 py-1 text-white text-xs hover:bg-blue-500"
             >
               z⁴-1
             </button>
             <button
+              type="button"
               onClick={() => {
                 const newRoots = [
                   { real: 1, imag: 0 },
@@ -488,11 +497,12 @@ export default function NewtonRootEditor({
                 ];
                 updateParameters({ ...parameters, roots: newRoots });
               }}
-              className="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-xs"
+              className="rounded bg-blue-600 px-2 py-1 text-white text-xs hover:bg-blue-500"
             >
               z²-1
             </button>
             <button
+              type="button"
               onClick={() => {
                 const angle = (2 * Math.PI) / 5;
                 const newRoots = Array.from({ length: 5 }, (_, i) => ({
@@ -501,7 +511,7 @@ export default function NewtonRootEditor({
                 }));
                 updateParameters({ ...parameters, roots: newRoots });
               }}
-              className="bg-purple-600 hover:bg-purple-500 text-white px-2 py-1 rounded text-xs"
+              className="rounded bg-purple-600 px-2 py-1 text-white text-xs hover:bg-purple-500"
             >
               z⁵-1
             </button>

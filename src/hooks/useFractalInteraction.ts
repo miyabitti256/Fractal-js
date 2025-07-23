@@ -77,14 +77,13 @@ export const useFractalInteraction = ({
 
       if (event.touches.length === 1 && event.touches[0]) {
         const touch = event.touches[0];
-        
+
         // まだドラッグ開始していない場合、移動距離をチェック
         if (!isDragging) {
           const moveDistance = Math.sqrt(
-            Math.pow(touch.clientX - touchStartPos.x, 2) + 
-            Math.pow(touch.clientY - touchStartPos.y, 2)
+            (touch.clientX - touchStartPos.x) ** 2 + (touch.clientY - touchStartPos.y) ** 2
           );
-          
+
           // 10px以上動いたらドラッグとして認識
           if (moveDistance > 10) {
             setIsDragging(true);
@@ -172,60 +171,65 @@ export const useFractalInteraction = ({
     ]
   );
 
-  const handleTouchEnd = useCallback((event: TouchEvent) => {
-    if (event.touches.length === 0) {
-      // 全てのタッチが終了
-      if (!isDragging && touchStartTime > 0) {
-        // ドラッグしていない場合はタップとして処理
-        const now = Date.now();
-        const touchDuration = now - touchStartTime;
-        
-        // 300ms以内の短いタップかつ、前回のタップから100ms以上経過している場合のみ処理
-        if (touchDuration < 300 && now - lastTapTimeRef.current > 100) {
-          lastTapTimeRef.current = now;
-          
-          const canvas = event.target as HTMLCanvasElement;
-          if (canvas) {
-            const rect = canvas.getBoundingClientRect();
-            const x = touchStartPos.x - rect.left;
-            const y = touchStartPos.y - rect.top;
-            
-            // タップした位置を中心に設定（PC版と同じ動作）
-            const canvasX = (x / rect.width) * canvasSize.width;
-            const canvasY = (y / rect.height) * canvasSize.height;
-            const aspectRatio = canvasSize.width / canvasSize.height;
-            const scale = 3.0 / parameters.zoom;
-            
-            const complexX = ('centerX' in parameters ? parameters.centerX : 0) + 
-              ((canvasX - canvasSize.width / 2) * scale * aspectRatio) / canvasSize.width;
-            const complexY = ('centerY' in parameters ? parameters.centerY : 0) + 
-              ((canvasY - canvasSize.height / 2) * scale) / canvasSize.height;
-            
-            setParameters((prev) => {
-              if ('centerX' in prev && 'centerY' in prev) {
-                return {
-                  ...prev,
-                  centerX: complexX,
-                  centerY: complexY,
-                } as AllFractalParameters;
-              }
-              return prev;
-            });
+  const handleTouchEnd = useCallback(
+    (event: TouchEvent) => {
+      if (event.touches.length === 0) {
+        // 全てのタッチが終了
+        if (!isDragging && touchStartTime > 0) {
+          // ドラッグしていない場合はタップとして処理
+          const now = Date.now();
+          const touchDuration = now - touchStartTime;
+
+          // 300ms以内の短いタップかつ、前回のタップから100ms以上経過している場合のみ処理
+          if (touchDuration < 300 && now - lastTapTimeRef.current > 100) {
+            lastTapTimeRef.current = now;
+
+            const canvas = event.target as HTMLCanvasElement;
+            if (canvas) {
+              const rect = canvas.getBoundingClientRect();
+              const x = touchStartPos.x - rect.left;
+              const y = touchStartPos.y - rect.top;
+
+              // タップした位置を中心に設定（PC版と同じ動作）
+              const canvasX = (x / rect.width) * canvasSize.width;
+              const canvasY = (y / rect.height) * canvasSize.height;
+              const aspectRatio = canvasSize.width / canvasSize.height;
+              const scale = 3.0 / parameters.zoom;
+
+              const complexX =
+                ('centerX' in parameters ? parameters.centerX : 0) +
+                ((canvasX - canvasSize.width / 2) * scale * aspectRatio) / canvasSize.width;
+              const complexY =
+                ('centerY' in parameters ? parameters.centerY : 0) +
+                ((canvasY - canvasSize.height / 2) * scale) / canvasSize.height;
+
+              setParameters((prev) => {
+                if ('centerX' in prev && 'centerY' in prev) {
+                  return {
+                    ...prev,
+                    centerX: complexX,
+                    centerY: complexY,
+                  } as AllFractalParameters;
+                }
+                return prev;
+              });
+            }
           }
         }
+
+        setIsDragging(false);
+        setIsPinching(false);
+        setLastPinchDistance(0);
+        setTouchStartTime(0);
+      } else if (event.touches.length === 1 && event.touches[0]) {
+        setIsPinching(false);
+        setLastPinchDistance(0);
+        // シングルタッチに戻った場合のドラッグ準備
+        setLastPointerPos({ x: event.touches[0].clientX, y: event.touches[0].clientY });
       }
-      
-      setIsDragging(false);
-      setIsPinching(false);
-      setLastPinchDistance(0);
-      setTouchStartTime(0);
-    } else if (event.touches.length === 1 && event.touches[0]) {
-      setIsPinching(false);
-      setLastPinchDistance(0);
-      // シングルタッチに戻った場合のドラッグ準備
-      setLastPointerPos({ x: event.touches[0].clientX, y: event.touches[0].clientY });
-    }
-  }, [isDragging, touchStartTime, touchStartPos, canvasSize, parameters, setParameters]);
+    },
+    [isDragging, touchStartTime, touchStartPos, canvasSize, parameters, setParameters]
+  );
 
   // Pointer Event handlers (デスクトップ用)
   const handlePointerDown = useCallback((event: React.PointerEvent) => {

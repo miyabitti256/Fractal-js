@@ -1,11 +1,11 @@
 import type {
   AllFractalParameters,
   BurningShipParameters,
+  ExtendedPerformance,
   FractalType,
   JuliaParameters,
   MandelbrotParameters,
   NewtonParameters,
-  ExtendedPerformance,
   WorkerErrorPayload,
 } from '@/types/fractal';
 import type {
@@ -191,7 +191,7 @@ export class FractalEngine {
     } else {
       renderKey = `${fractalType}_${parameters.iterations}_${options.width}_${options.height}`;
     }
-    
+
     // 同じ内容のレンダリングが既に実行中の場合は、その結果を返す
     const existingTask = this.currentRenderingTasks.get(renderKey);
     if (existingTask) {
@@ -292,30 +292,32 @@ export class FractalEngine {
     options: RenderOptions
   ): Promise<RenderResult> {
     const { width, height, paletteType = 'rainbow' } = options;
-    
+
     // タイルサイズを動的に最適化（解像度とWorker数に基づく）
     const workerCount = this.workerPool.length;
     const totalPixels = width * height;
     const pixelsPerWorker = totalPixels / workerCount;
-    
+
     // 最適なタイルサイズを計算（高頻度レンダリング対応でタイルサイズを大きめに調整）
     let tileSize: number;
-    if (pixelsPerWorker < 8192) { // 64x128以下
+    if (pixelsPerWorker < 8192) {
+      // 64x128以下
       tileSize = 64;
-    } else if (pixelsPerWorker < 32768) { // 128x256以下
+    } else if (pixelsPerWorker < 32768) {
+      // 128x256以下
       tileSize = 96;
-    } else if (pixelsPerWorker < 131072) { // 256x512以下
+    } else if (pixelsPerWorker < 131072) {
+      // 256x512以下
       tileSize = 128;
     } else {
       tileSize = 160; // 大きめのタイルで通信オーバーヘッド削減
     }
-    
+
     // ニュートンフラクタルの場合も、ユーザーが選択したパレットタイプを尊重
     // ただし、デフォルトが指定されていない場合のみnewtonパレットを使用
-    const effectivePaletteType = fractalType === 'newton' && paletteType === 'rainbow' 
-      ? 'newton' 
-      : paletteType;
-    
+    const effectivePaletteType =
+      fractalType === 'newton' && paletteType === 'rainbow' ? 'newton' : paletteType;
+
     const tilesX = Math.ceil(width / tileSize);
     const tilesY = Math.ceil(height / tileSize);
     const totalTiles = tilesX * tilesY;
@@ -599,7 +601,7 @@ export class FractalEngine {
     // 根の数を取得してカラーパレット戦略を決定
     const rootCount = parameters.roots?.length || 3;
     console.log(`Newton fractal rendering: ${rootCount} roots detected`);
-    
+
     // 根が4以上の場合、グレーパレットを含む拡張パレットを使用
     const useExtendedPalette = rootCount >= 4;
     if (useExtendedPalette) {
@@ -639,11 +641,16 @@ export class FractalEngine {
 
     // 根の数に応じて動的にカラーパレットを生成
     const selectedPaletteType = options.paletteType || 'newton';
-    
+
     if (selectedPaletteType === 'newton') {
       // Newton専用パレット（根が4以上の場合はグレーパレット含む）
       const dynamicPalette = ColorPalette.getNewtonPalette(256, rootCount);
-      const imageData = this.applyNewtonPalette(iterationData, parameters.iterations, dynamicPalette, rootCount);
+      const imageData = this.applyNewtonPalette(
+        iterationData,
+        parameters.iterations,
+        dynamicPalette,
+        rootCount
+      );
       const stats = this.calculateStats(iterationData);
 
       return {
@@ -658,7 +665,11 @@ export class FractalEngine {
       };
     } else {
       // 標準パレット（他のフラクタルと同様の処理）
-      const imageData = ColorPalette.applyPalette(iterationData, parameters.iterations, selectedPaletteType);
+      const imageData = ColorPalette.applyPalette(
+        iterationData,
+        parameters.iterations,
+        selectedPaletteType
+      );
       const stats = this.calculateStats(iterationData);
 
       return {
@@ -723,7 +734,7 @@ export class FractalEngine {
             const colorSetOffset = rootIndex * colorsPerSet;
             const iterationOffset = Math.floor((iterations / maxIterations) * (colorsPerSet - 1));
             const paletteIndex = colorSetOffset + iterationOffset;
-            
+
             const color = palette[paletteIndex];
             if (color) {
               imageData.data[index] = color[0] || 0;
@@ -736,7 +747,7 @@ export class FractalEngine {
             const graySetOffset = rootCount * colorsPerSet;
             const iterationOffset = Math.floor((iterations / maxIterations) * (colorsPerSet - 1));
             const paletteIndex = graySetOffset + iterationOffset;
-            
+
             const color = palette[paletteIndex];
             if (color) {
               imageData.data[index] = color[0] || 0;

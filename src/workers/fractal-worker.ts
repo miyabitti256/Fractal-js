@@ -275,7 +275,8 @@ function renderTile(message: RenderMessage): CompleteMessage {
   const data = imageData.data;
 
   // カラーパレットを生成
-  const rootCount = fractalType === 'newton' ? (parameters as NewtonParameters)?.roots?.length || 3 : undefined;
+  const rootCount =
+    fractalType === 'newton' ? (parameters as NewtonParameters)?.roots?.length || 3 : undefined;
   const palette = generatePalette(paletteType, 256, rootCount);
 
   for (let y = 0; y < tileHeight; y++) {
@@ -407,7 +408,7 @@ function renderTile(message: RenderMessage): CompleteMessage {
         // カラーパレットから色を取得
         let colorIndex: number;
         let color: number[];
-        
+
         if (fractalType === 'newton' && paletteType === 'newton') {
           // ニュートンフラクタル専用のカラーマッピング（newtonパレット選択時のみ）
           const newtonParams = parameters as NewtonParameters;
@@ -415,33 +416,37 @@ function renderTile(message: RenderMessage): CompleteMessage {
           const useExtendedPalette = rootCount >= 4;
           const totalColorSets = useExtendedPalette ? rootCount + 1 : rootCount;
           const colorsPerSet = Math.floor(palette.length / totalColorSets);
-          
+
           // 根のインデックスと反復回数を分離
           const rootIndex = Math.floor(colorValue / 100);
           const iterationsInColor = colorValue % 100;
-          
+
           if (rootIndex >= 0 && rootIndex < rootCount) {
             // 通常の根の色（RGB色相パレット）
             const colorSetOffset = rootIndex * colorsPerSet;
-            const iterationOffset = Math.floor((iterationsInColor / maxIterations) * Math.max(1, colorsPerSet - 1));
+            const iterationOffset = Math.floor(
+              (iterationsInColor / maxIterations) * Math.max(1, colorsPerSet - 1)
+            );
             colorIndex = colorSetOffset + iterationOffset;
           } else if (useExtendedPalette && rootIndex >= rootCount) {
             // 4以上の根の場合、グレーパレットを使用
             const graySetOffset = rootCount * colorsPerSet;
-            const iterationOffset = Math.floor((iterationsInColor / maxIterations) * Math.max(1, colorsPerSet - 1));
+            const iterationOffset = Math.floor(
+              (iterationsInColor / maxIterations) * Math.max(1, colorsPerSet - 1)
+            );
             colorIndex = graySetOffset + iterationOffset;
           } else {
             // デフォルト（黒）
             colorIndex = 0;
           }
-          
+
           color = palette[Math.max(0, Math.min(colorIndex, palette.length - 1))] || [0, 0, 0, 255];
         } else {
           // 標準カラーマッピング（他のフラクタル、またはニュートンでも他のパレット選択時）
           colorIndex = Math.floor((colorValue / maxIterations) * (palette.length - 1));
           color = palette[Math.max(0, Math.min(colorIndex, palette.length - 1))] || [0, 0, 0, 255];
         }
-        
+
         data[pixelIndex] = color[0] || 0; // R
         data[pixelIndex + 1] = color[1] || 0; // G
         data[pixelIndex + 2] = color[2] || 0; // B
@@ -489,7 +494,7 @@ const paletteCache = new Map<string, number[][]>();
 function generatePalette(type: string, steps: number, rootCount?: number): number[][] {
   // キャッシュキーを生成
   const cacheKey = `${type}_${steps}_${rootCount || 0}`;
-  
+
   // キャッシュから取得を試行
   const cached = paletteCache.get(cacheKey);
   if (cached) {
@@ -575,61 +580,70 @@ function generatePalette(type: string, steps: number, rootCount?: number): numbe
       }
       break;
 
-    case 'newton':
+    case 'newton': {
       // Newton フラクタル専用のカラーパレット（拡張版 - 根が4以上でグレーパレット追加）
       const baseColors = [
-        [255, 100, 100], [100, 255, 100], [100, 100, 255], [255, 255, 100], [255, 100, 255],
-        [100, 255, 255], [255, 150, 50], [150, 50, 255], [50, 255, 150], [255, 50, 150]
+        [255, 100, 100],
+        [100, 255, 100],
+        [100, 100, 255],
+        [255, 255, 100],
+        [255, 100, 255],
+        [100, 255, 255],
+        [255, 150, 50],
+        [150, 50, 255],
+        [50, 255, 150],
+        [255, 50, 150],
       ];
 
       const count = rootCount || 3;
-      
+
       // 根が4以上の場合、グレーパレットも含める
       const useGrayPalette = count >= 4;
       const totalColorSets = useGrayPalette ? count + 1 : count; // +1 for gray palette
       const stepsPerColorSet = Math.floor(steps / totalColorSets);
-      
+
       // RGB色相パレット（従来の根用）
       for (let rootIndex = 0; rootIndex < count; rootIndex++) {
         const baseColor = baseColors[rootIndex % baseColors.length] || [255, 255, 255];
         const baseR = baseColor[0] || 255;
         const baseG = baseColor[1] || 255;
         const baseB = baseColor[2] || 255;
-        
+
         // 事前計算で最適化
         const colorStep = stepsPerColorSet > 1 ? 1 / (stepsPerColorSet - 1) : 0;
-        
+
         for (let i = 0; i < stepsPerColorSet; i++) {
           const brightness = 0.3 + (1 - i * colorStep) * 0.7;
-          
+
           colors.push([
             Math.floor(baseR * brightness),
             Math.floor(baseG * brightness),
             Math.floor(baseB * brightness),
-            255
+            255,
           ]);
         }
       }
-      
+
       // 根が4以上の場合、グレーパレットを追加
       if (useGrayPalette) {
         const colorStep = stepsPerColorSet > 1 ? 1 / (stepsPerColorSet - 1) : 0;
-        
+
         for (let i = 0; i < stepsPerColorSet; i++) {
           const t = i * colorStep;
-          
+
           // グレースケール（高コントラスト版）
           const grayValue = Math.floor(50 + t * 205); // 50-255の範囲で高コントラスト
           colors.push([grayValue, grayValue, grayValue, 255]);
         }
       }
-      
+
       // 残りの色（収束しなかった点用）
       const remainingSteps = steps - colors.length;
       for (let i = 0; i < remainingSteps; i++) {
         colors.push([0, 0, 0, 255]);
       }
       break;
+    }
 
     default: // 'mandelbrot'
       for (let i = 0; i < steps; i++) {

@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/style/useNamingConvention: <explanation> */
 import type { FractalType, MandelbrotParameters } from '@/types/fractal';
 
 export interface WebGPUCapabilities {

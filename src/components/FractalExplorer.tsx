@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFractalEngine } from '@/hooks/useFractalEngine';
 import { useFractalInteraction } from '@/hooks/useFractalInteraction';
+import type { FractalType, TabId } from '@/types/fractal';
 import DesktopControlPanel from './fractal/DesktopControlPanel';
 import FractalCanvas, { type FractalCanvasRef } from './fractal/FractalCanvas';
-import MobileBottomSheet from './fractal/MobileBottomSheet';
 import JuliaDualView from './fractal/JuliaDualView';
-import type { FractalType, TabId } from '@/types/fractal';
+import MobileBottomSheet from './fractal/MobileBottomSheet';
 
 interface FractalExplorerProps {
   className?: string;
@@ -147,14 +147,14 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
   if (isMobile) {
     return (
       <div
-        className={`h-screen ${className} relative overflow-hidden mobile-app`}
+        className={`h-screen ${className} mobile-app relative overflow-hidden`}
         style={{
           height: '100dvh', // 動的ビューポート対応
         }}
       >
         {/* フルスクリーンキャンバス */}
         <div
-          className="fixed inset-0 bg-black flex items-center justify-center"
+          className="fixed inset-0 flex items-center justify-center bg-black"
           style={{
             paddingTop: 'env(safe-area-inset-top)',
             paddingBottom: 'env(safe-area-inset-bottom)',
@@ -163,36 +163,37 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
           }}
         >
           {fractalEngine.isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50">
               <div className="text-center">
-                <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-white text-sm">フラクタルを初期化中...</p>
+                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary-600 border-t-transparent"></div>
+                <p className="text-sm text-white">フラクタルを初期化中...</p>
               </div>
             </div>
           )}
 
           {fractalEngine.isRendering && (
             <div
-              className="absolute top-safe left-safe bg-black/70 text-white px-3 py-2 rounded-full z-10"
+              className="absolute top-safe left-safe z-10 rounded-full bg-black/70 px-3 py-2 text-white"
               style={{
                 top: `calc(1rem + env(safe-area-inset-top))`,
                 left: `calc(1rem + env(safe-area-inset-left))`,
               }}
             >
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary-600 border-t-transparent"></div>
                 <span className="text-xs">{Math.round(fractalEngine.renderProgress * 100)}%</span>
               </div>
             </div>
           )}
 
           {fractalEngine.error && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
-              <div className="text-center p-6 bg-red-900/90 rounded-lg mx-4">
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50">
+              <div className="mx-4 rounded-lg bg-red-900/90 p-6 text-center">
                 <p className="text-red-200 text-sm">エラー: {fractalEngine.error}</p>
                 <button
+                  type="button"
                   onClick={() => fractalEngine.setError(null)}
-                  className="mt-4 bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm"
+                  className="mt-4 rounded-lg bg-red-700 px-4 py-2 text-sm text-white hover:bg-red-600"
                 >
                   閉じる
                 </button>
@@ -201,7 +202,7 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
           )}
 
           {/* キャンバスコンテナ - 画面全体にフィット */}
-          <div className="w-full h-full flex items-center justify-center">
+          <div className="flex h-full w-full items-center justify-center">
             <FractalCanvas
               ref={canvasRef}
               canvasSize={canvasSize}
@@ -211,7 +212,7 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
               onPointerUp={interaction.handlePointerUp}
               onClick={interaction.handleCanvasClick}
               canvasRef={interaction.canvasRef}
-              className="w-full h-full object-cover"
+              className="h-full w-full object-cover"
             />
           </div>
         </div>
@@ -219,8 +220,9 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
         {/* デュアルビューモードボタン（ジュリア集合のみ） */}
         {fractalEngine.fractalType === 'julia' && (
           <button
+            type="button"
             onClick={fractalEngine.enterDualView}
-            className="absolute z-10 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs transition-colors"
+            className="absolute z-10 rounded-lg bg-blue-600 px-3 py-2 text-white text-xs transition-colors hover:bg-blue-700"
             style={{
               top: `calc(1rem + env(safe-area-inset-top))`,
               right: `calc(1rem + env(safe-area-inset-right))`,
@@ -232,17 +234,19 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
 
         {/* フローティングアクションボタン (FAB) */}
         <button
+          type="button"
           onClick={() =>
             setBottomSheetHeight(bottomSheetHeight === 'collapsed' ? 'half' : 'collapsed')
           }
-          className="fab w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 touch-target ui-element"
+          className="fab touch-target ui-element flex h-14 w-14 items-center justify-center rounded-full bg-primary-600 text-white shadow-lg transition-all duration-300 hover:bg-primary-700"
           style={{
             transform: bottomSheetHeight !== 'collapsed' ? 'scale(0.9)' : 'scale(1)',
             bottom: `calc(1.5rem + env(safe-area-inset-bottom))`,
             right: `calc(1.5rem + env(safe-area-inset-right))`,
           }}
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <title>ボトムシート</title>
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -288,7 +292,7 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
 
   // デスクトップレイアウト
   return (
-    <div className={`flex flex-col lg:flex-row h-screen ${className}`}>
+    <div className={`flex h-screen flex-col lg:flex-row ${className}`}>
       <DesktopControlPanel
         fractalType={fractalEngine.fractalType}
         setFractalType={fractalEngine.setFractalType}
@@ -318,32 +322,33 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
       />
 
       {/* Canvas Area */}
-      <div className="flex-1 relative bg-black">
+      <div className="relative flex-1 bg-black">
         {fractalEngine.isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50">
             <div className="text-center">
-              <div className="w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary-600 border-t-transparent"></div>
               <p className="text-white">フラクタルを初期化中...</p>
             </div>
           </div>
         )}
 
         {fractalEngine.isRendering && (
-          <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg z-10">
+          <div className="absolute top-4 left-4 z-10 rounded-lg bg-black/70 px-3 py-2 text-white">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-600 border-t-transparent"></div>
               <span>レンダリング中... {Math.round(fractalEngine.renderProgress * 100)}%</span>
             </div>
           </div>
         )}
 
         {fractalEngine.error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-            <div className="text-center p-6 bg-red-900/90 rounded-lg">
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50">
+            <div className="rounded-lg bg-red-900/90 p-6 text-center">
               <p className="text-red-200">エラー: {fractalEngine.error}</p>
               <button
+                type="button"
                 onClick={() => fractalEngine.setError(null)}
-                className="mt-4 bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded"
+                className="mt-4 rounded bg-red-700 px-4 py-2 text-white hover:bg-red-600"
               >
                 閉じる
               </button>
@@ -367,29 +372,33 @@ const FractalExplorer: React.FC<FractalExplorerProps> = ({ className = '' }) => 
           {/* デュアルビューモードボタン（ジュリア集合のみ） */}
           {fractalEngine.fractalType === 'julia' && (
             <button
+              type="button"
               onClick={fractalEngine.enterDualView}
-              className="w-full p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+              className="w-full rounded-lg bg-blue-600 p-2 text-sm text-white transition-colors hover:bg-blue-700"
               title="デュアルビューモード"
             >
               デュアルビュー
             </button>
           )}
           <button
+            type="button"
             onClick={fractalEngine.resetView}
-            className="p-2 bg-gray-800/90 text-white rounded-lg hover:bg-gray-700/90 transition-colors"
+            className="rounded-lg bg-gray-800/90 p-2 text-white transition-colors hover:bg-gray-700/90"
             title="ビューをリセット"
           >
             ⌂
           </button>
           <button
-            className="p-2 bg-gray-800/90 text-white rounded-lg hover:bg-gray-700/90 transition-colors"
+            type="button"
+            className="rounded-lg bg-gray-800/90 p-2 text-white transition-colors hover:bg-gray-700/90"
             title="画像を保存 (準備中)"
             disabled
           >
             ⤓
           </button>
           <button
-            className="p-2 bg-gray-800/90 text-white rounded-lg hover:bg-gray-700/90 transition-colors"
+            type="button"
+            className="rounded-lg bg-gray-800/90 p-2 text-white transition-colors hover:bg-gray-700/90"
             title="フルスクリーン (準備中)"
             disabled
           >

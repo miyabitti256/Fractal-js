@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FractalEngine, type PerformanceMetrics } from '@/lib/fractal-engine';
 import { getDefaultParameters } from '@/lib/fractal-utils';
-import type { AllFractalParameters, FractalType, Complex, JuliaParameters } from '@/types/fractal';
+import type { AllFractalParameters, Complex, FractalType, JuliaParameters } from '@/types/fractal';
 
 export const useFractalEngine = () => {
   const engineRef = useRef<FractalEngine | null>(null);

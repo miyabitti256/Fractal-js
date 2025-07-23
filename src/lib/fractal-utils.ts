@@ -1,45 +1,51 @@
-import type { AllFractalParameters, Complex, FractalType, ExtendedPerformance, WorkerPoolMessage } from '@/types/fractal';
+import type {
+  AllFractalParameters,
+  Complex,
+  ExtendedPerformance,
+  FractalType,
+  WorkerPoolMessage,
+} from '@/types/fractal';
 
 /**
  * 複素数演算ユーティリティ
  */
-export class ComplexMath {
-  static add(a: Complex, b: Complex): Complex {
+export const ComplexMath = {
+  add: (a: Complex, b: Complex): Complex => {
     return { real: a.real + b.real, imag: a.imag + b.imag };
-  }
+  },
 
-  static subtract(a: Complex, b: Complex): Complex {
+  subtract: (a: Complex, b: Complex): Complex => {
     return { real: a.real - b.real, imag: a.imag - b.imag };
-  }
+  },
 
-  static multiply(a: Complex, b: Complex): Complex {
+  multiply: (a: Complex, b: Complex): Complex => {
     return {
       real: a.real * b.real - a.imag * b.imag,
       imag: a.real * b.imag + a.imag * b.real,
     };
-  }
+  },
 
-  static divide(a: Complex, b: Complex): Complex {
+  divide: (a: Complex, b: Complex): Complex => {
     const denominator = b.real * b.real + b.imag * b.imag;
     return {
       real: (a.real * b.real + a.imag * b.imag) / denominator,
       imag: (a.imag * b.real - a.real * b.imag) / denominator,
     };
-  }
+  },
 
-  static magnitude(z: Complex): number {
+  magnitude: (z: Complex): number => {
     return Math.sqrt(z.real * z.real + z.imag * z.imag);
-  }
+  },
 
-  static magnitudeSquared(z: Complex): number {
+  magnitudeSquared: (z: Complex): number => {
     return z.real * z.real + z.imag * z.imag;
-  }
+  },
 
-  static conjugate(z: Complex): Complex {
+  conjugate: (z: Complex): Complex => {
     return { real: z.real, imag: -z.imag };
-  }
+  },
 
-  static power(z: Complex, n: number): Complex {
+  power: (z: Complex, n: number): Complex => {
     const r = ComplexMath.magnitude(z);
     const theta = Math.atan2(z.imag, z.real);
     const rPowN = r ** n;
@@ -48,8 +54,8 @@ export class ComplexMath {
       real: rPowN * Math.cos(nTheta),
       imag: rPowN * Math.sin(nTheta),
     };
-  }
-}
+  },
+} as const;
 
 /**
  * フラクタルパラメータのデフォルト値を取得
@@ -141,11 +147,11 @@ export function getDefaultParameters(type: FractalType): AllFractalParameters {
 /**
  * 拡張されたカラーパレット生成ユーティリティ
  */
-export class ColorPalette {
+export const ColorPalette = (() => {
   // パレットキャッシュ
-  private static paletteCache = new Map<string, number[][]>();
+  const paletteCache = new Map<string, number[][]>();
 
-  static generateHot(steps: number): number[][] {
+  const generateHot = (steps: number): number[][] => {
     const colors: number[][] = [];
     for (let i = 0; i < steps; i++) {
       const t = i / (steps - 1);
@@ -155,9 +161,9 @@ export class ColorPalette {
       colors.push([r, g, b, 255]);
     }
     return colors;
-  }
+  };
 
-  static generateCool(steps: number): number[][] {
+  const generateCool = (steps: number): number[][] => {
     const colors: number[][] = [];
     for (let i = 0; i < steps; i++) {
       const t = i / (steps - 1);
@@ -167,28 +173,28 @@ export class ColorPalette {
       colors.push([r, g, b, 255]);
     }
     return colors;
-  }
+  };
 
-  static generateRainbow(steps: number): number[][] {
+  const generateRainbow = (steps: number): number[][] => {
     const colors: number[][] = [];
     for (let i = 0; i < steps; i++) {
       const hue = (i / steps) * 360;
-      const [r, g, b] = ColorPalette.hslToRgb(hue, 100, 50);
+      const [r, g, b] = hslToRgb(hue, 100, 50);
       colors.push([r, g, b, 255]);
     }
     return colors;
-  }
+  };
 
-  static generateGrayscale(steps: number): number[][] {
+  const generateGrayscale = (steps: number): number[][] => {
     const colors: number[][] = [];
     for (let i = 0; i < steps; i++) {
       const value = Math.floor((i / (steps - 1)) * 255);
       colors.push([value, value, value, 255]);
     }
     return colors;
-  }
+  };
 
-  static generateMandelbrot(steps: number): number[][] {
+  const generateMandelbrot = (steps: number): number[][] => {
     const colors: number[][] = [];
     for (let i = 0; i < steps; i++) {
       const t = i / (steps - 1);
@@ -232,9 +238,9 @@ export class ColorPalette {
       }
     }
     return colors;
-  }
+  };
 
-  static generateJulia(steps: number): number[][] {
+  const generateJulia = (steps: number): number[][] => {
     const colors: number[][] = [];
     for (let i = 0; i < steps; i++) {
       const t = i / (steps - 1);
@@ -275,9 +281,9 @@ export class ColorPalette {
       }
     }
     return colors;
-  }
+  };
 
-  static generateFire(steps: number): number[][] {
+  const generateFire = (steps: number): number[][] => {
     const colors: number[][] = [];
     for (let i = 0; i < steps; i++) {
       const t = i / (steps - 1);
@@ -291,9 +297,9 @@ export class ColorPalette {
       }
     }
     return colors;
-  }
+  };
 
-  static generateOcean(steps: number): number[][] {
+  const generateOcean = (steps: number): number[][] => {
     const colors: number[][] = [];
     for (let i = 0; i < steps; i++) {
       const t = i / (steps - 1);
@@ -307,9 +313,9 @@ export class ColorPalette {
       }
     }
     return colors;
-  }
+  };
 
-  static generateSunset(steps: number): number[][] {
+  const generateSunset = (steps: number): number[][] => {
     const colors: number[][] = [];
     for (let i = 0; i < steps; i++) {
       const t = i / (steps - 1);
@@ -326,15 +332,15 @@ export class ColorPalette {
       }
     }
     return colors;
-  }
+  };
 
-  static generateCustom(colors: [number, number, number][], steps: number): number[][] {
+  const generateCustom = (colors: [number, number, number][], steps: number): number[][] => {
     if (colors.length < 2) {
       throw new Error('At least 2 colors are required for custom palette');
     }
 
     const result: number[][] = [];
-    const segmentSize = steps / (colors.length - 1);
+    // const segmentSize = steps / (colors.length - 1);
 
     for (let i = 0; i < steps; i++) {
       const position = (i / (steps - 1)) * (colors.length - 1);
@@ -357,9 +363,9 @@ export class ColorPalette {
     }
 
     return result;
-  }
+  };
 
-  private static hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
     h = h / 360;
     s = s / 100;
     l = l / 100;
@@ -386,16 +392,16 @@ export class ColorPalette {
     }
 
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-  }
+  };
 
   /**
    * カラーパレットをImageDataに適用
    */
-  static applyPalette(
+  const applyPalette = (
     iterationData: number[][],
     maxIterations: number,
     paletteType: string = 'mandelbrot'
-  ): ImageData {
+  ): ImageData => {
     if (!iterationData || iterationData.length === 0 || !iterationData[0]) {
       return new ImageData(1, 1);
     }
@@ -404,7 +410,7 @@ export class ColorPalette {
     const height = iterationData.length;
     const imageData = new ImageData(width, height);
 
-    const palette = ColorPalette.getPalette(paletteType, 256);
+    const palette = getPalette(paletteType, 256);
 
     for (let y = 0; y < height; y++) {
       const row = iterationData[y];
@@ -437,24 +443,24 @@ export class ColorPalette {
     }
 
     return imageData;
-  }
+  };
 
   /**
    * Newton フラクタル専用のカラーパレット生成（キャッシュ付き）
    * 根の数に応じて色を分割し、4以上の場合はグレーパレットも追加
    */
-  static generateNewton(steps: number, rootCount: number): number[][] {
+  const generateNewton = (steps: number, rootCount: number): number[][] => {
     // キャッシュキーを生成
     const cacheKey = `newton_${steps}_${rootCount}`;
-    
+
     // キャッシュから取得を試行
-    const cached = ColorPalette.paletteCache.get(cacheKey);
+    const cached = paletteCache.get(cacheKey);
     if (cached) {
       return cached;
     }
 
     const colors: number[][] = [];
-    
+
     // 基本色セット（各根に異なる色相を割り当て）
     const baseColors = [
       [255, 100, 100], // 赤系
@@ -463,109 +469,109 @@ export class ColorPalette {
       [255, 255, 100], // 黄系
       [255, 100, 255], // マゼンタ系
       [100, 255, 255], // シアン系
-      [255, 150, 50],  // オレンジ系
-      [150, 50, 255],  // 紫系
-      [50, 255, 150],  // エメラルド系
-      [255, 50, 150],  // ピンク系
+      [255, 150, 50], // オレンジ系
+      [150, 50, 255], // 紫系
+      [50, 255, 150], // エメラルド系
+      [255, 50, 150], // ピンク系
     ];
 
     // 根が4以上の場合、グレーパレットも含める
     const useGrayPalette = rootCount >= 4;
     const totalColorSets = useGrayPalette ? rootCount + 1 : rootCount; // +1 for gray palette
     const stepsPerColorSet = Math.floor(steps / totalColorSets);
-    
+
     // RGB色相パレット（従来の根用）
     for (let rootIndex = 0; rootIndex < rootCount; rootIndex++) {
       const baseColor = baseColors[rootIndex % baseColors.length] || [255, 255, 255];
-      
+
       for (let i = 0; i < stepsPerColorSet; i++) {
         const t = stepsPerColorSet > 1 ? i / (stepsPerColorSet - 1) : 0;
-        
+
         // 収束の速さに応じて明度を変化（速い収束ほど明るく）
         const brightness = 0.3 + (1 - t) * 0.7;
-        
+
         colors.push([
           Math.floor((baseColor[0] || 255) * brightness),
           Math.floor((baseColor[1] || 255) * brightness),
           Math.floor((baseColor[2] || 255) * brightness),
-          255
+          255,
         ]);
       }
     }
-    
+
     // 根が4以上の場合、グレーパレットを追加
     if (useGrayPalette) {
       for (let i = 0; i < stepsPerColorSet; i++) {
         const t = stepsPerColorSet > 1 ? i / (stepsPerColorSet - 1) : 0;
-        
+
         // グレースケール（高コントラスト版）
         const grayValue = Math.floor(50 + t * 205); // 50-255の範囲で高コントラスト
         colors.push([grayValue, grayValue, grayValue, 255]);
       }
     }
-    
+
     // 残りの色（収束しなかった点用）
     const remainingSteps = steps - colors.length;
     for (let i = 0; i < remainingSteps; i++) {
       colors.push([0, 0, 0, 255]); // 黒
     }
-    
+
     // キャッシュに保存
-    ColorPalette.paletteCache.set(cacheKey, colors);
-    
+    paletteCache.set(cacheKey, colors);
+
     return colors;
-  }
+  };
 
   /**
    * Newton フラクタル用の動的カラーパレット取得
    * rootCountに応じて最適化されたパレットを返す
    */
-  static getNewtonPalette(steps: number = 256, rootCount: number = 3): number[][] {
-    return ColorPalette.generateNewton(steps, rootCount);
-  }
+  const getNewtonPalette = (steps: number = 256, rootCount: number = 3): number[][] => {
+    return generateNewton(steps, rootCount);
+  };
 
   /**
    * パレットキャッシュのクリア（メモリ管理用）
    */
-  static clearPaletteCache(): void {
-    ColorPalette.paletteCache.clear();
-  }
+  const clearPaletteCache = (): void => {
+    paletteCache.clear();
+  };
 
   /**
    * パレットキャッシュサイズを取得（デバッグ用）
    */
-  static getPaletteCacheSize(): number {
-    return ColorPalette.paletteCache.size;
-  }
+  const getPaletteCacheSize = (): number => {
+    return paletteCache.size;
+  };
 
-  static getPalette(type: string, steps: number = 256): number[][] {
+  const getPalette = (type: string, steps: number = 256): number[][] => {
     switch (type) {
       case 'hot':
-        return ColorPalette.generateHot(steps);
+        return generateHot(steps);
       case 'cool':
-        return ColorPalette.generateCool(steps);
+        return generateCool(steps);
       case 'rainbow':
-        return ColorPalette.generateRainbow(steps);
+        return generateRainbow(steps);
       case 'grayscale':
-        return ColorPalette.generateGrayscale(steps);
+        return generateGrayscale(steps);
       case 'mandelbrot':
-        return ColorPalette.generateMandelbrot(steps);
+        return generateMandelbrot(steps);
       case 'julia':
-        return ColorPalette.generateJulia(steps);
+        return generateJulia(steps);
       case 'fire':
-        return ColorPalette.generateFire(steps);
+        return generateFire(steps);
       case 'ocean':
-        return ColorPalette.generateOcean(steps);
+        return generateOcean(steps);
       case 'sunset':
-        return ColorPalette.generateSunset(steps);
+        return generateSunset(steps);
       case 'newton':
-        return ColorPalette.generateNewton(steps, 3);
+        return generateNewton(steps, 3);
       default:
-        return ColorPalette.generateMandelbrot(steps);
+        return generateMandelbrot(steps);
     }
-  }
+  };
 
-  static getPaletteNames(): string[] {
+  const getPaletteNames = (): string[] => {
     return [
       'mandelbrot',
       'julia',
@@ -578,14 +584,34 @@ export class ColorPalette {
       'sunset',
       'grayscale',
     ];
-  }
-}
+  };
+
+  return {
+    generateHot,
+    generateCool,
+    generateRainbow,
+    generateGrayscale,
+    generateMandelbrot,
+    generateJulia,
+    generateFire,
+    generateOcean,
+    generateSunset,
+    generateCustom,
+    applyPalette,
+    generateNewton,
+    getNewtonPalette,
+    clearPaletteCache,
+    getPaletteCacheSize,
+    getPalette,
+    getPaletteNames,
+  } as const;
+})();
 
 /**
  * 座標変換ユーティリティ
  */
-export class CoordinateTransform {
-  static screenToComplex(
+export const CoordinateTransform = {
+  screenToComplex: (
     screenX: number,
     screenY: number,
     canvasWidth: number,
@@ -593,89 +619,98 @@ export class CoordinateTransform {
     centerX: number,
     centerY: number,
     zoom: number
-  ): Complex {
+  ): Complex => {
     const aspectRatio = canvasWidth / canvasHeight;
     const x = (screenX - canvasWidth / 2) / zoom + centerX;
     const y = ((screenY - canvasHeight / 2) / zoom) * aspectRatio + centerY;
     return { real: x, imag: y };
-  }
+  },
 
-  static complexToScreen(
+  complexToScreen: (
     complex: Complex,
     canvasWidth: number,
     canvasHeight: number,
     centerX: number,
     centerY: number,
     zoom: number
-  ): { x: number; y: number } {
+  ): { x: number; y: number } => {
     const aspectRatio = canvasWidth / canvasHeight;
     const x = (complex.real - centerX) * zoom + canvasWidth / 2;
     const y = ((complex.imag - centerY) * zoom) / aspectRatio + canvasHeight / 2;
     return { x, y };
-  }
-}
+  },
+} as const;
 
 /**
  * パフォーマンス測定ユーティリティ
  */
-export class PerformanceMonitor {
-  private static measurements: Map<string, number[]> = new Map();
+export const PerformanceMonitor = (() => {
+  const measurements: Map<string, number[]> = new Map();
 
-  static start(name: string): void {
+  const start = (name: string): void => {
     performance.mark(`${name}-start`);
-  }
+  };
 
-  static end(name: string): number {
+  const end = (name: string): number => {
     performance.mark(`${name}-end`);
     performance.measure(name, `${name}-start`, `${name}-end`);
 
     const measure = performance.getEntriesByName(name, 'measure').pop();
     const duration = measure?.duration ?? 0;
 
-    if (!PerformanceMonitor.measurements.has(name)) {
-      PerformanceMonitor.measurements.set(name, []);
+    if (!measurements.has(name)) {
+      measurements.set(name, []);
     }
-    PerformanceMonitor.measurements.get(name)!.push(duration);
+    measurements.get(name)?.push(duration);
 
     return duration;
-  }
+  };
 
-  static getAverage(name: string): number {
-    const measurements = PerformanceMonitor.measurements.get(name) ?? [];
-    if (measurements.length === 0) return 0;
-    return measurements.reduce((sum, val) => sum + val, 0) / measurements.length;
-  }
+  const getAverage = (name: string): number => {
+    const measurementList = measurements.get(name) ?? [];
+    if (measurementList.length === 0) return 0;
+    return measurementList.reduce((sum, val) => sum + val, 0) / measurementList.length;
+  };
 
-  static getMax(name: string): number {
-    const measurements = PerformanceMonitor.measurements.get(name) ?? [];
-    return Math.max(...measurements);
-  }
+  const getMax = (name: string): number => {
+    const measurementList = measurements.get(name) ?? [];
+    return Math.max(...measurementList);
+  };
 
-  static getMin(name: string): number {
-    const measurements = PerformanceMonitor.measurements.get(name) ?? [];
-    return Math.min(...measurements);
-  }
+  const getMin = (name: string): number => {
+    const measurementList = measurements.get(name) ?? [];
+    return Math.min(...measurementList);
+  };
 
-  static clear(name?: string): void {
+  const clear = (name?: string): void => {
     if (name) {
-      PerformanceMonitor.measurements.delete(name);
+      measurements.delete(name);
     } else {
-      PerformanceMonitor.measurements.clear();
+      measurements.clear();
     }
     performance.clearMarks();
     performance.clearMeasures();
-  }
-}
+  };
+
+  return {
+    start,
+    end,
+    getAverage,
+    getMax,
+    getMin,
+    clear,
+  } as const;
+})();
 
 /**
  * メモリ使用量監視
  */
-export class MemoryMonitor {
-  static getUsage(): { used: number; total: number; percentage: number } | null {
+export const MemoryMonitor = {
+  getUsage: (): { used: number; total: number; percentage: number } | null => {
     if ('memory' in performance) {
       const memory = (performance as ExtendedPerformance).memory;
       if (!memory) return null;
-      
+
       return {
         used: memory.usedJSHeapSize,
         total: memory.totalJSHeapSize,
@@ -683,16 +718,16 @@ export class MemoryMonitor {
       };
     }
     return null;
-  }
+  },
 
-  static formatBytes(bytes: number): string {
+  formatBytes: (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / k ** i).toFixed(2)) + ' ' + sizes[i];
-  }
-}
+  },
+} as const;
 
 /**
  * WebWorker管理ユーティリティ
@@ -784,16 +819,16 @@ export class WorkerPool {
 /**
  * フラクタル計算アルゴリズム
  */
-export class FractalCalculations {
+export const FractalCalculations = {
   /**
    * マンデルブロ集合の計算
    */
-  static mandelbrot(
+  mandelbrot: (
     real: number,
     imaginary: number,
     maxIterations: number,
     escapeRadius: number
-  ): number {
+  ): number => {
     let zx = 0;
     let zy = 0;
     let iteration = 0;
@@ -806,18 +841,18 @@ export class FractalCalculations {
     }
 
     return iteration;
-  }
+  },
 
   /**
    * ジュリア集合の計算
    */
-  static julia(
+  julia: (
     real: number,
     imaginary: number,
     c: Complex,
     maxIterations: number,
     escapeRadius: number
-  ): number {
+  ): number => {
     let zx = real;
     let zy = imaginary;
     let iteration = 0;
@@ -830,17 +865,17 @@ export class FractalCalculations {
     }
 
     return iteration;
-  }
+  },
 
   /**
    * バーニングシップフラクタルの計算
    */
-  static burningShip(
+  burningShip: (
     real: number,
     imaginary: number,
     maxIterations: number,
     escapeRadius: number
-  ): number {
+  ): number => {
     let zx = 0;
     let zy = 0;
     let iteration = 0;
@@ -853,19 +888,19 @@ export class FractalCalculations {
     }
 
     return iteration;
-  }
+  },
 
   /**
    * ニュートン・ラフソン法フラクタルの計算
    */
-  static newton(
+  newton: (
     real: number,
     imaginary: number,
     polynomial: Complex[],
     tolerance: number,
     maxIterations: number,
     roots: Complex[]
-  ): { iterations: number; root: number } {
+  ): { iterations: number; root: number } => {
     let z: Complex = { real, imag: imaginary };
     let iteration = 0;
 
@@ -913,17 +948,14 @@ export class FractalCalculations {
     }
 
     return { iterations: maxIterations, root: -1 }; // 収束しなかった場合
-  }
+  },
 
   /**
    * 根から多項式とその導関数を評価
    * f(z) = (z - root1)(z - root2)...(z - rootN)
    * f'(z) = sum of products with one factor differentiated
    */
-  private static evaluatePolynomialFromRoots(
-    z: Complex,
-    roots: Complex[]
-  ): { f: Complex; fPrime: Complex } {
+  evaluatePolynomialFromRoots: (z: Complex, roots: Complex[]): { f: Complex; fPrime: Complex } => {
     if (roots.length === 0) {
       console.warn('Newton fractal: No roots provided!');
       return {
@@ -956,18 +988,18 @@ export class FractalCalculations {
     }
 
     return { f, fPrime };
-  }
+  },
 
   /**
    * シェルピンスキーの三角形（カオスゲーム版）
    */
-  static sierpinskiChaos(
+  sierpinskiChaos: (
     x: number,
     y: number,
     iterations: number,
     width: number,
     height: number
-  ): number[][] {
+  ): number[][] => {
     const points: number[][] = Array(height)
       .fill(0)
       .map(() => Array(width).fill(0));
@@ -1002,12 +1034,12 @@ export class FractalCalculations {
     }
 
     return points;
-  }
+  },
 
   /**
    * コッホ雪片の計算（線分の再帰的分割）
    */
-  static kochSnowflake(level: number, width: number, height: number): { x: number; y: number }[] {
+  kochSnowflake: (level: number, width: number, height: number): { x: number; y: number }[] => {
     const points: { x: number; y: number }[] = [];
     const centerX = width / 2;
     const centerY = height / 2;
@@ -1032,16 +1064,16 @@ export class FractalCalculations {
     }
 
     return points;
-  }
+  },
 
   /**
    * コッホ曲線の生成
    */
-  private static generateKochCurve(
+  generateKochCurve: (
     start: { x: number; y: number },
     end: { x: number; y: number },
     level: number
-  ): { x: number; y: number }[] {
+  ): { x: number; y: number }[] => {
     if (level === 0) {
       return [start, end];
     }
@@ -1069,5 +1101,5 @@ export class FractalCalculations {
     points.push(...FractalCalculations.generateKochCurve(p2, end, level - 1));
 
     return points;
-  }
-}
+  },
+} as const;
