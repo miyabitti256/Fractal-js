@@ -404,7 +404,10 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                           : 'シングルスレッドCPU'}
                     </p>
                     <p className="mt-1 text-gray-400 text-xs">
-                      Workers: {availableWorkers}/{navigator.hardwareConcurrency || 'N/A'}
+                      Workers: {availableWorkers}/
+                      {typeof navigator !== 'undefined'
+                        ? navigator.hardwareConcurrency || 'N/A'
+                        : 'N/A'}
                     </p>
                   </div>
                 </div>

@@ -335,7 +335,8 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
                 WebGPU: {webGPUSupported ? '✅ 利用可能' : '❌ 非対応'}
               </p>
               <p className="text-gray-500 text-xs">
-                Workers: {availableWorkers}/{navigator.hardwareConcurrency || 'N/A'}
+                Workers: {availableWorkers}/
+                {typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 'N/A' : 'N/A'}
               </p>
             </div>
           </div>
