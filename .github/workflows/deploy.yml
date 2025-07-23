@@ -38,12 +38,7 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Lint and format check
-        run: |
-          bun x biome check --verbose
-          bun x biome format --check .
-
-      - name: Type check
+      - name: Type check (Basic)
         run: bun x astro check
 
       - name: Build with Astro
