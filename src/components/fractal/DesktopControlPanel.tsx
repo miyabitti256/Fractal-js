@@ -67,8 +67,6 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
     { value: 'julia', label: 'Julia Set', color: 'text-fractal-julia' },
     { value: 'burning-ship', label: 'Burning Ship', color: 'text-fractal-burning' },
     { value: 'newton', label: 'Newton Fractal', color: 'text-fractal-newton' },
-    { value: 'lyapunov', label: 'Lyapunov Fractal', color: 'text-fractal-lyapunov' },
-    { value: 'barnsley-fern', label: 'Barnsley Fern', color: 'text-fractal-barnsley' },
   ];
 
   const canvasSizes = [
@@ -100,12 +98,8 @@ const DesktopControlPanel: React.FC<DesktopControlPanelProps> = ({
                     ? 'border-primary-500 bg-primary-600 text-white'
                     : 'border-gray-600 bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
                 }`}
-                disabled={!['mandelbrot', 'julia', 'burning-ship', 'newton'].includes(type.value)}
               >
                 <span className={type.color}>●</span> {type.label}
-                {!['mandelbrot', 'julia', 'burning-ship', 'newton'].includes(type.value) && (
-                  <span className="ml-2 text-gray-500 text-xs">(準備中)</span>
-                )}
               </button>
             ))}
           </div>

@@ -188,14 +188,14 @@ export class WebGPUEngine {
    */
   async initialize(): Promise<boolean> {
     try {
-      console.log('🔧 WebGPU詳細初期化開始');
+      // console.log('🔧 WebGPU詳細初期化開始');
 
       if (!('gpu' in navigator)) {
         throw new Error('WebGPU not supported - navigator.gpu が存在しません');
       }
-      console.log('✅ navigator.gpu が利用可能');
+      // console.log('✅ navigator.gpu が利用可能');
 
-      console.log('🔍 WebGPUアダプター要求中...');
+      // console.log('🔍 WebGPUアダプター要求中...');
       this.adapter = await navigator.gpu.requestAdapter({
         powerPreference: 'high-performance',
       });
@@ -204,26 +204,26 @@ export class WebGPUEngine {
         throw new Error('No WebGPU adapter found');
       }
 
-      console.log('✅ WebGPUアダプター取得成功');
-      console.log('📊 アダプター情報:');
-      console.log(`  - 利用可能機能: ${Array.from(this.adapter.features).join(', ') || 'なし'}`);
-      console.log(`  - ベンダー: ${this.adapter.info?.vendor || '不明'}`);
-      console.log(`  - デバイス: ${this.adapter.info?.device || '不明'}`);
+      // console.log('✅ WebGPUアダプター取得成功');
+      // console.log('📊 アダプター情報:');
+      // console.log(`  - 利用可能機能: ${Array.from(this.adapter.features).join(', ') || 'なし'}`);
+      // console.log(`  - ベンダー: ${this.adapter.info?.vendor || '不明'}`);
+      // console.log(`  - デバイス: ${this.adapter.info?.device || '不明'}`);
 
-      console.log('🔧 WebGPUデバイス要求中...');
+      // console.log('🔧 WebGPUデバイス要求中...');
       this.device = await this.adapter.requestDevice({
         requiredFeatures: [],
         requiredLimits: {},
       });
-      console.log('✅ WebGPUデバイス取得成功');
+      // console.log('✅ WebGPUデバイス取得成功');
 
-      console.log('🛠️ コンピュートパイプライン作成中...');
+      // console.log('🛠️ コンピュートパイプライン作成中...');
       await this.createComputePipeline();
-      console.log('✅ コンピュートパイプライン作成成功');
+      // console.log('✅ コンピュートパイプライン作成成功');
 
       this.isInitialized = true;
 
-      console.log('🎯 WebGPU初期化完全成功!');
+      // console.log('🎯 WebGPU初期化完全成功!');
       return true;
     } catch (error) {
       console.error('❌ WebGPU初期化失敗:', error);

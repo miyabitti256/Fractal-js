@@ -38,13 +38,13 @@ export const useFractalEngine = () => {
       setError(null);
 
       if (!engineRef.current) {
-        console.log('🔧 FractalEngine 作成中...');
+        // console.log('🔧 FractalEngine 作成中...');
         engineRef.current = new FractalEngine();
       }
 
-      console.log('⏳ エンジン初期化完了を待機中...');
+      // console.log('⏳ エンジン初期化完了を待機中...');
       await engineRef.current.waitForInitialization();
-      console.log('✅ エンジン初期化完了確認');
+      // console.log('✅ エンジン初期化完了確認');
 
       setIsLoading(false);
     } catch (err) {
@@ -64,14 +64,14 @@ export const useFractalEngine = () => {
       if (!canvasContext || !engine) return;
 
       if (isRendering) {
-        console.log('レンダリング中のためスキップ');
+        // console.log('レンダリング中のためスキップ');
         return;
       }
 
       if (!engine.initialized) {
-        console.log('⏳ エンジン初期化待機中...');
+        // console.log('⏳ エンジン初期化待機中...');
         await engine.waitForInitialization();
-        console.log('✅ エンジン初期化完了を確認');
+        // console.log('✅ エンジン初期化完了を確認');
       }
 
       const selectedMethod =
@@ -81,7 +81,7 @@ export const useFractalEngine = () => {
             ? 'マルチスレッド'
             : 'シングルスレッドCPU';
 
-      console.log(`フラクタルレンダリング開始 - 選択された方式: ${selectedMethod}`);
+      // console.log(`フラクタルレンダリング開始 - 選択された方式: ${selectedMethod}`);
       setIsRendering(true);
       setRenderProgress(0);
 
@@ -100,12 +100,12 @@ export const useFractalEngine = () => {
         canvasContext.putImageData(result.imageData, 0, 0);
         setPerformanceMetrics(engine.getPerformanceMetrics());
 
-        console.log(`✅ フラクタルレンダリング完了`);
-        console.log(`   方式: ${result.method}`);
-        console.log(`   時間: ${result.renderTime.toFixed(1)}ms`);
-        console.log(`   解像度: ${canvasSize.width}×${canvasSize.height}`);
+        // console.log(`✅ フラクタルレンダリング完了`);
+        // console.log(`   方式: ${result.method}`);
+        // console.log(`   時間: ${result.renderTime.toFixed(1)}ms`);
+        // console.log(`   解像度: ${canvasSize.width}×${canvasSize.height}`);
         if (result.stats.workersUsed) {
-          console.log(`   使用Worker数: ${result.stats.workersUsed}`);
+          // console.log(`   使用Worker数: ${result.stats.workersUsed}`);
         }
       } catch (err) {
         console.error('レンダリングエラー:', err);

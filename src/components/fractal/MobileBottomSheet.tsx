@@ -140,8 +140,6 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
     { value: 'julia', label: 'Julia Set' },
     { value: 'burning-ship', label: 'Burning Ship' },
     { value: 'newton', label: 'Newton Fractal' },
-    { value: 'lyapunov', label: 'Lyapunov Fractal' },
-    { value: 'barnsley-fern', label: 'Barnsley Fern' },
   ];
 
   const canvasSizes = [
@@ -270,17 +268,8 @@ const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                     className="w-full rounded-lg border border-gray-500 bg-gray-600 px-3 py-2 text-white"
                   >
                     {fractalTypes.map((type) => (
-                      <option
-                        key={type.value}
-                        value={type.value}
-                        disabled={
-                          !['mandelbrot', 'julia', 'burning-ship', 'newton'].includes(type.value)
-                        }
-                      >
-                        {type.label}{' '}
-                        {!['mandelbrot', 'julia', 'burning-ship', 'newton'].includes(type.value)
-                          ? '(準備中)'
-                          : ''}
+                      <option key={type.value} value={type.value}>
+                        {type.label}
                       </option>
                     ))}
                   </select>

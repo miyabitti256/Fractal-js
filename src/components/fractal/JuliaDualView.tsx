@@ -202,20 +202,20 @@ const JuliaDualView: React.FC<JuliaDualViewProps> = ({
   useEffect(() => {
     const initEngine = async () => {
       if (!fractalEngineRef.current) {
-        console.log('🔧 デュアルビューモード: フラクタルエンジン初期化開始');
+        // console.log('🔧 デュアルビューモード: フラクタルエンジン初期化開始');
         fractalEngineRef.current = new FractalEngine();
         await fractalEngineRef.current.waitForInitialization();
-        console.log('✅ デュアルビューモード: フラクタルエンジン初期化完了');
+        // console.log('✅ デュアルビューモード: フラクタルエンジン初期化完了');
 
         // 初期化完了後に初回レンダリングを実行
         if (!isInitializedRef.current) {
           isInitializedRef.current = true;
-          console.log('🎨 デュアルビューモード: 初回レンダリング開始');
+          // console.log('🎨 デュアルビューモード: 初回レンダリング開始');
           await Promise.all([
             renderMandelbrotOnce(), // マンデルブロ集合は初回のみ
             renderJulia(currentC), // ジュリア集合は通常レンダリング
           ]);
-          console.log('✅ デュアルビューモード: 初回レンダリング完了');
+          // console.log('✅ デュアルビューモード: 初回レンダリング完了');
         }
       }
     };
@@ -244,7 +244,7 @@ const JuliaDualView: React.FC<JuliaDualViewProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    console.log('🎨 マンデルブロ集合: 初回レンダリング開始');
+    // console.log('🎨 マンデルブロ集合: 初回レンダリング開始');
     setIsMandelbrotRendering(true);
 
     const mandelbrotParams: MandelbrotParameters = {
@@ -275,7 +275,7 @@ const JuliaDualView: React.FC<JuliaDualViewProps> = ({
       // 初期の点を描画
       drawCurrentPoint(ctx, currentC);
 
-      console.log('✅ マンデルブロ集合: 初回レンダリング完了');
+      // console.log('✅ マンデルブロ集合: 初回レンダリング完了');
     } catch (error) {
       console.error('Mandelbrot initial rendering error:', error);
     } finally {
@@ -306,7 +306,7 @@ const JuliaDualView: React.FC<JuliaDualViewProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    console.log('🎨 マンデルブロ集合: パレット変更による再レンダリング');
+    // console.log('🎨 マンデルブロ集合: パレット変更による再レンダリング');
     setIsMandelbrotRendering(true);
 
     const mandelbrotParams: MandelbrotParameters = {
@@ -334,7 +334,7 @@ const JuliaDualView: React.FC<JuliaDualViewProps> = ({
       // 現在の点を描画
       drawCurrentPoint(ctx, currentC);
 
-      console.log('✅ マンデルブロ集合: パレット変更による再レンダリング完了');
+      // console.log('✅ マンデルブロ集合: パレット変更による再レンダリング完了');
     } catch (error) {
       console.error('Mandelbrot palette re-rendering error:', error);
     } finally {

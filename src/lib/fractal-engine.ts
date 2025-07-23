@@ -87,14 +87,14 @@ export class FractalEngine {
   }
 
   private async initializeAsync(): Promise<void> {
-    console.log('🚀 FractalEngine 初期化開始');
+    // console.log('🚀 FractalEngine 初期化開始');
 
     // WebGPU初期化
     try {
-      console.log('⚡ WebGPU初期化中...');
+      // console.log('⚡ WebGPU初期化中...');
       this.webgpuEngine = new WebGPUEngine();
       this.isWebGPUSupported = await this.webgpuEngine.initialize();
-      console.log(`⚡ WebGPU初期化結果: ${this.isWebGPUSupported ? '✅ 成功' : '❌ 失敗'}`);
+      // console.log(`⚡ WebGPU初期化結果: ${this.isWebGPUSupported ? '✅ 成功' : '❌ 失敗'}`);
     } catch (error) {
       console.error('❌ WebGPU初期化エラー:', error);
       this.isWebGPUSupported = false;
@@ -104,9 +104,9 @@ export class FractalEngine {
     await this.initializeWorkerPool();
 
     this.isInitialized = true;
-    console.log('🎯 FractalEngine 初期化完了');
-    console.log(`  - WebGPU対応: ${this.isWebGPUSupported}`);
-    console.log(`  - 利用可能Worker数: ${this.workerPool.length}`);
+    // console.log('🎯 FractalEngine 初期化完了');
+    // console.log(`  - WebGPU対応: ${this.isWebGPUSupported}`);
+    // console.log(`  - 利用可能Worker数: ${this.workerPool.length}`);
   }
 
   private async initializeWorkerPool(): Promise<void> {
@@ -114,16 +114,16 @@ export class FractalEngine {
     // 論理スレッド数を最大限活用（ただし安全性のため32を上限とする）
     const workerCount = Math.min(hardwareConcurrency || 4, 32);
 
-    console.log(`🔧 Worker初期化開始:`);
-    console.log(`  - navigator.hardwareConcurrency: ${hardwareConcurrency}`);
-    console.log(`  - 作成予定Worker数: ${workerCount} (論理スレッド数を最大限活用)`);
+    // console.log(`🔧 Worker初期化開始:`);
+    // console.log(`  - navigator.hardwareConcurrency: ${hardwareConcurrency}`);
+    // console.log(`  - 作成予定Worker数: ${workerCount} (論理スレッド数を最大限活用)`);
 
     const workerPromises: Promise<Worker>[] = [];
 
     for (let i = 0; i < workerCount; i++) {
       const workerPromise = new Promise<Worker>((resolve, reject) => {
         try {
-          console.log(`  Worker ${i + 1} 作成中...`);
+          // console.log(`  Worker ${i + 1} 作成中...`);
           const worker = new Worker(new URL('../workers/fractal-worker.ts', import.meta.url), {
             type: 'module',
           });
@@ -139,7 +139,7 @@ export class FractalEngine {
 
           worker.addEventListener('message', (event) => {
             if (event.data.id === 'init' && !workerInitialized) {
-              console.log(`✅ Worker ${i + 1} 初期化完了:`, event.data.payload);
+              // console.log(`✅ Worker ${i + 1} 初期化完了:`, event.data.payload);
               workerInitialized = true;
               clearTimeout(initTimeout);
               resolve(worker);
@@ -166,13 +166,13 @@ export class FractalEngine {
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
         this.workerPool.push(result.value);
-        console.log(`  ✅ Worker ${index + 1} 追加成功`);
+        // console.log(`  ✅ Worker ${index + 1} 追加成功`);
       } else {
         console.error(`  ❌ Worker ${index + 1} 初期化失敗:`, result.reason);
       }
     });
 
-    console.log(`🎯 Worker初期化完了: ${this.workerPool.length}/${workerCount} workers`);
+    // console.log(`🎯 Worker初期化完了: ${this.workerPool.length}/${workerCount} workers`);
   }
 
   /**
@@ -255,7 +255,7 @@ export class FractalEngine {
       throw new Error('WebGPU engine not available');
     }
 
-    console.log('⚡ WebGPUレンダリング開始 - GPU並列計算を使用');
+    // console.log('⚡ WebGPUレンダリング開始 - GPU並列計算を使用');
 
     const iterationData = await this.webgpuEngine.renderMandelbrot(
       parameters,
@@ -322,9 +322,9 @@ export class FractalEngine {
     const tilesY = Math.ceil(height / tileSize);
     const totalTiles = tilesX * tilesY;
 
-    console.log(
-      `🚀 マルチスレッドレンダリング開始 - ${this.workerPool.length}個のWorkerでタイル処理 (${totalTiles}タイル, タイルサイズ: ${tileSize}x${tileSize})`
-    );
+    // console.log(
+    //   `🚀 マルチスレッドレンダリング開始 - ${this.workerPool.length}個のWorkerでタイル処理 (${totalTiles}タイル, タイルサイズ: ${tileSize}x${tileSize})`
+    // );
 
     // 最終画像を作成
     const finalImageData = new ImageData(width, height);
@@ -407,9 +407,9 @@ export class FractalEngine {
   ): Promise<RenderResult> {
     const { width, height, paletteType = 'mandelbrot' } = options;
 
-    console.log(`🐌 シングルスレッドCPUレンダリング開始 - ${fractalType}`);
+    // console.log(`🐌 シングルスレッドCPUレンダリング開始 - ${fractalType}`);
 
-    console.log(`レンダリング開始: ${fractalType} フラクタル`);
+    // console.log(`レンダリング開始: ${fractalType} フラクタル`);
 
     switch (fractalType) {
       case 'mandelbrot':
@@ -419,7 +419,7 @@ export class FractalEngine {
       case 'burning-ship':
         return this.renderBurningShipCPU(parameters as BurningShipParameters, options);
       case 'newton':
-        console.log('Newton fractal パラメータ:', parameters);
+        // console.log('Newton fractal パラメータ:', parameters);
         return this.renderNewtonCPU(parameters as NewtonParameters, options);
       default:
         throw new Error(`Unsupported fractal type for CPU rendering: ${fractalType}`);
@@ -600,12 +600,12 @@ export class FractalEngine {
 
     // 根の数を取得してカラーパレット戦略を決定
     const rootCount = parameters.roots?.length || 3;
-    console.log(`Newton fractal rendering: ${rootCount} roots detected`);
+    // console.log(`Newton fractal rendering: ${rootCount} roots detected`);
 
     // 根が4以上の場合、グレーパレットを含む拡張パレットを使用
     const useExtendedPalette = rootCount >= 4;
     if (useExtendedPalette) {
-      console.log(`🎨 Extended palette mode: RGB + Gray palette for ${rootCount} roots`);
+      // console.log(`🎨 Extended palette mode: RGB + Gray palette for ${rootCount} roots`);
     }
 
     for (let y = 0; y < height; y++) {

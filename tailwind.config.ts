@@ -49,8 +49,6 @@ export default {
           julia: '#4ecdc4',
           burning: '#ffe66d',
           newton: '#a8e6cf',
-          lyapunov: '#ff8b94',
-          barnsley: '#b4a7d6',
         },
       },
       fontFamily: {

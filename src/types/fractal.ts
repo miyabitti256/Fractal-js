@@ -1,11 +1,5 @@
 // フラクタルタイプの定義
-export type FractalType =
-  | 'mandelbrot'
-  | 'julia'
-  | 'burning-ship'
-  | 'newton'
-  | 'lyapunov'
-  | 'barnsley-fern';
+export type FractalType = 'mandelbrot' | 'julia' | 'burning-ship' | 'newton';
 
 // 複素数の型定義
 export interface Complex {
@@ -45,33 +39,12 @@ export interface NewtonParameters extends FractalParameters {
   roots: Complex[]; // 根の配列を追加
 }
 
-// Lyapunov フラクタルのパラメータ
-export interface LyapunovParameters extends FractalParameters {
-  type: 'lyapunov';
-  sequence: string;
-  aMin: number;
-  aMax: number;
-  bMin: number;
-  bMax: number;
-}
-
-// Barnsley Fern のパラメータ
-export interface BarnsleyFernParameters {
-  type: 'barnsley-fern';
-  iterations: number;
-  zoom: number;
-  offsetX: number;
-  offsetY: number;
-}
-
 // 全てのフラクタルパラメータの統合型
 export type AllFractalParameters =
   | MandelbrotParameters
   | JuliaParameters
   | BurningShipParameters
-  | NewtonParameters
-  | LyapunovParameters
-  | BarnsleyFernParameters;
+  | NewtonParameters;
 
 // カラーマッピングの種類
 export type ColorMapType = 'hot' | 'cool' | 'rainbow' | 'grayscale' | 'custom';

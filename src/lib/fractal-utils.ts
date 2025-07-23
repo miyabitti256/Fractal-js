@@ -115,30 +115,6 @@ export function getDefaultParameters(type: FractalType): AllFractalParameters {
         ],
       };
 
-    case 'lyapunov':
-      return {
-        type: 'lyapunov',
-        zoom: 1,
-        centerX: 0,
-        centerY: 0,
-        iterations: 100,
-        escapeRadius: 4,
-        sequence: 'AB',
-        aMin: 2,
-        aMax: 4,
-        bMin: 2,
-        bMax: 4,
-      };
-
-    case 'barnsley-fern':
-      return {
-        type: 'barnsley-fern',
-        iterations: 100000,
-        zoom: 1,
-        offsetX: 0,
-        offsetY: 9,
-      };
-
     default:
       throw new Error(`Unknown fractal type: ${type}`);
   }

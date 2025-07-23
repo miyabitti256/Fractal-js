@@ -105,3 +105,6 @@ blob-report/
 # Bundle analyzer
 bundle-report.html
 stats.html
+
+# Documentation
+docs/
