@@ -29,20 +29,94 @@ const JuliaDualView: React.FC<JuliaDualViewProps> = ({
   const [juliaIterations, setJuliaIterations] = useState(100);
   const [isJuliaRendering, setIsJuliaRendering] = useState(false);
   const [isMandelbrotRendering, setIsMandelbrotRendering] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const [selectedPalette, setSelectedPalette] = useState('mandelbrot');
 
-  // ビューポートに応じた動的サイズ計算
+  // ボトムシートの状態管理
+  const [bottomSheetHeight, setBottomSheetHeight] = useState<'collapsed' | 'half' | 'full'>('collapsed');
+  const [isDragging, setIsDragging] = useState(false);
+  const [startY, setStartY] = useState(0);
+  const [currentTranslateY, setCurrentTranslateY] = useState(0);
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  // ドラッグ開始
+  const handleDragStart = useCallback((e: React.TouchEvent | React.PointerEvent) => {
+    setIsDragging(true);
+    const clientY = 'touches' in e ? e.touches[0]?.clientY || 0 : e.clientY;
+    setStartY(clientY);
+    setCurrentTranslateY(0);
+  }, []);
+
+  // ドラッグ中
+  const handleDragMove = useCallback((e: React.TouchEvent | React.PointerEvent) => {
+    if (!isDragging) return;
+
+    const clientY = 'touches' in e ? e.touches[0]?.clientY || 0 : e.clientY;
+    const deltaY = clientY - startY;
+
+    // ドラッグ範囲を制限
+    const maxDrag = window.innerHeight * 0.8;
+    const limitedDeltaY = Math.max(-maxDrag, Math.min(maxDrag, deltaY));
+
+    setCurrentTranslateY(limitedDeltaY);
+  }, [isDragging, startY]);
+
+  // ドラッグ終了
+  const handleDragEnd = useCallback(() => {
+    if (!isDragging) return;
+
+    setIsDragging(false);
+    const threshold = 100; // ピクセル単位の閾値
+
+    // 現在の高さと移動距離に基づいて次の状態を決定
+    if (bottomSheetHeight === 'collapsed') {
+      if (currentTranslateY < -threshold) {
+        setBottomSheetHeight('half');
+      }
+    } else if (bottomSheetHeight === 'half') {
+      if (currentTranslateY > threshold) {
+        setBottomSheetHeight('collapsed');
+      } else if (currentTranslateY < -threshold) {
+        setBottomSheetHeight('full');
+      }
+    } else if (bottomSheetHeight === 'full') {
+      if (currentTranslateY > threshold) {
+        setBottomSheetHeight('half');
+      }
+    }
+
+    setCurrentTranslateY(0);
+  }, [isDragging, currentTranslateY, bottomSheetHeight]);
+
+  // 高さに応じたtranslateY値を計算
+  const getTranslateY = () => {
+    if (isDragging) {
+      // ドラッグ中は現在の移動量を適用
+      const baseTranslate =
+        bottomSheetHeight === 'collapsed' ? 100 : bottomSheetHeight === 'half' ? 50 : 0;
+      const dragPercent = (currentTranslateY / window.innerHeight) * 100;
+      return Math.max(0, Math.min(100, baseTranslate + dragPercent));
+    }
+
+    // 通常状態（collapsed = 100%で完全に下がった状態）
+    return bottomSheetHeight === 'collapsed' ? 100 : bottomSheetHeight === 'half' ? 50 : 0;
+  };
+
+  // ビューポートに応じた動的サイズ計算（完全に下がった状態を基準）
   const getCanvasSize = useCallback(() => {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     
     if (isMobile) {
-      // モバイル: 各キャンバスが画面の約40%を使用（縦に2つ配置）
+      // モバイル: ボトムシートが完全に下がった状態を基準にキャンバスサイズを計算
       const availableWidth = Math.floor(viewportWidth - 32); // パディング考慮
-      const headerHeight = 60; // 下部ヘッダー高さ
-      const availableHeight = Math.floor((viewportHeight - headerHeight - 48) / 2); // 2つのキャンバス + 区切り線
-      const size = Math.min(availableWidth, availableHeight, 280);
+      const headerHeight = 60; // キャンバスタイトル高さ（両方）
+      const dividerHeight = 20; // 区切り線高さ
+      const overlayButtonsHeight = 40; // 右上ボタン群の高さ
+      
+      const availableHeight = Math.floor(
+        (viewportHeight - headerHeight - dividerHeight - overlayButtonsHeight) / 2
+      );
+      const size = Math.min(availableWidth, availableHeight, 400);
       
       return {
         mandelbrot: { width: size, height: size, renderWidth: Math.floor(size * 0.9), renderHeight: Math.floor(size * 0.9) },
@@ -439,17 +513,8 @@ const JuliaDualView: React.FC<JuliaDualViewProps> = ({
     updateCurrentC(newC);
   }, [canvasToComplex, updateCurrentC]);
 
-  // タッチイベント
-  const handleMandelbrotTouchMove = useCallback((event: React.TouchEvent<HTMLCanvasElement>) => {
-    event.preventDefault();
-    if (!isDragging) return;
-    const touch = event.touches[0];
-    if (touch) {
-      handleMandelbrotPointerMove(touch.clientX, touch.clientY);
-    }
-  }, [isDragging, handleMandelbrotPointerMove]);
-
-  const handleMandelbrotTouchStart = useCallback((event: React.TouchEvent<HTMLCanvasElement>) => {
+  // タッチイベントハンドラー（ネイティブイベント用）
+  const handleMandelbrotTouchStart = useCallback((event: TouchEvent) => {
     event.preventDefault();
     setIsDragging(true);
     const touch = event.touches[0];
@@ -458,6 +523,38 @@ const JuliaDualView: React.FC<JuliaDualViewProps> = ({
       updateCurrentC(newC);
     }
   }, [canvasToComplex, updateCurrentC]);
+
+  const handleMandelbrotTouchMove = useCallback((event: TouchEvent) => {
+    event.preventDefault();
+    if (!isDragging) return;
+    const touch = event.touches[0];
+    if (touch) {
+      handleMandelbrotPointerMove(touch.clientX, touch.clientY);
+    }
+  }, [isDragging, handleMandelbrotPointerMove]);
+
+  const handleMandelbrotTouchEnd = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+      triggerHighQualityRender(currentC);
+    }
+  }, [isDragging, currentC, triggerHighQualityRender]);
+
+  // タッチイベントの手動登録（passive: false）
+  useEffect(() => {
+    const canvas = mandelbrotCanvasRef.current;
+    if (!canvas || !isMobile) return;
+
+    canvas.addEventListener('touchstart', handleMandelbrotTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleMandelbrotTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleMandelbrotTouchEnd, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('touchstart', handleMandelbrotTouchStart);
+      canvas.removeEventListener('touchmove', handleMandelbrotTouchMove);
+      canvas.removeEventListener('touchend', handleMandelbrotTouchEnd);
+    };
+  }, [handleMandelbrotTouchStart, handleMandelbrotTouchMove, handleMandelbrotTouchEnd, isMobile]);
 
   // ドラッグ終了処理（高品質レンダリング実行）
   const handlePointerEnd = useCallback(() => {
@@ -493,111 +590,302 @@ const JuliaDualView: React.FC<JuliaDualViewProps> = ({
     }
   }, [juliaIterations]);
 
+  // リサイズ時のキャンバスサイズ更新のみ（ボトムシート状態変更は除外）
+  useEffect(() => {
+    const handleResize = () => {
+      setCanvasSize(getCanvasSize());
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [getCanvasSize]);
+
   return (
     <div className={`julia-dual-view ${className} h-screen flex flex-col ${className}`}>
       {isMobile ? (
         // モバイルレイアウト: 通常ビューと同様の構造
         <div className="flex flex-col h-screen bg-gray-900">
-          {/* メインコンテンツエリア */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* キャンバスエリア */}
-            <div className="flex-1 flex flex-col gap-4 p-4 min-h-0">
-              {/* マンデルブロ集合ビュー */}
-              <div className="flex-1 flex flex-col items-center justify-center min-h-0">
-                <div className="text-center mb-3">
-                  <h3 className="text-white text-lg font-semibold mb-1">
-                    マンデルブロ集合
-                  </h3>
-                  <p className="text-gray-400 text-xs">
-                    タップ・ドラッグでcパラメータを選択
-                  </p>
-                </div>
-                
-                <div className="relative">
-                  <canvas
-                    ref={mandelbrotCanvasRef}
-                    className="border-2 border-gray-600 rounded-xl cursor-crosshair touch-none transition-all hover:border-primary-500 max-w-full max-h-full"
-                    onMouseMove={handleMandelbrotMouseMove}
-                    onMouseDown={handleMandelbrotMouseDown}
-                    onMouseUp={handlePointerEnd}
-                    onMouseLeave={handlePointerEnd}
-                    onTouchStart={handleMandelbrotTouchStart}
-                    onTouchMove={handleMandelbrotTouchMove}
-                    onTouchEnd={handlePointerEnd}
-                    style={{
-                      width: `${canvasSize.mandelbrot.width}px`,
-                      height: `${canvasSize.mandelbrot.height}px`,
-                      imageRendering: 'auto'
-                    }}
-                    aria-label="マンデルブロ集合キャンバス"
-                  />
-                  
-                  <div className="absolute top-2 left-2 bg-gray-900/80 backdrop-blur-sm px-2 py-1 rounded text-xs text-gray-300">
-                    {canvasSize.mandelbrot.renderWidth}×{canvasSize.mandelbrot.renderHeight}
-                  </div>
-                </div>
+          {/* キャンバスエリア（フルスクリーン） */}
+          <div className="flex-1 flex flex-col relative overflow-hidden">
+            {/* マンデルブロ集合ビュー */}
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="text-center mb-2">
+                <h3 className="text-white text-sm font-semibold mb-1">
+                  マンデルブロ集合
+                </h3>
+                <p className="text-gray-400 text-xs">
+                  タップ・ドラッグでcパラメータを選択
+                </p>
               </div>
-
-              {/* 区切り線 */}
-              <div className="h-px bg-gray-700 my-2"></div>
-
-              {/* ジュリア集合ビュー */}
-              <div className="flex-1 flex flex-col items-center justify-center min-h-0">
-                <div className="text-center mb-3">
-                  <h3 className="text-white text-lg font-semibold mb-1">
-                    ジュリア集合
-                  </h3>
-                  <p className="text-gray-400 text-xs">
-                    c = {currentC.real.toFixed(4)} + {currentC.imag.toFixed(4)}i
-                  </p>
-                </div>
+              
+              <div className="relative">
+                <canvas
+                  ref={mandelbrotCanvasRef}
+                  className="border-2 border-gray-600 rounded-lg cursor-crosshair touch-none transition-all hover:border-primary-500 max-w-full max-h-full"
+                  onMouseMove={handleMandelbrotMouseMove}
+                  onMouseDown={handleMandelbrotMouseDown}
+                  onMouseUp={handlePointerEnd}
+                  onMouseLeave={handlePointerEnd}
+                  style={{
+                    width: `${canvasSize.mandelbrot.width}px`,
+                    height: `${canvasSize.mandelbrot.height}px`,
+                    imageRendering: 'auto'
+                  }}
+                  aria-label="マンデルブロ集合キャンバス"
+                />
                 
-                <div className="relative">
-                  <canvas
-                    ref={juliaCanvasRef}
-                    className="border-2 border-gray-600 rounded-xl transition-all hover:border-green-500 max-w-full max-h-full"
-                    style={{
-                      width: `${canvasSize.julia.width}px`,
-                      height: `${canvasSize.julia.height}px`,
-                      imageRendering: 'auto'
-                    }}
-                    aria-label="ジュリア集合キャンバス"
-                  />
-                  
-                  <div className="absolute top-2 left-2 bg-gray-900/80 backdrop-blur-sm px-2 py-1 rounded text-xs text-gray-300">
-                    {canvasSize.julia.renderWidth}×{canvasSize.julia.renderHeight}
-                  </div>
+                <div className="absolute top-2 left-2 bg-gray-900/80 backdrop-blur-sm px-2 py-1 rounded text-xs text-gray-300">
+                  {canvasSize.mandelbrot.renderWidth}×{canvasSize.mandelbrot.renderHeight}
                 </div>
               </div>
             </div>
 
-            {/* トップ固定ヘッダー */}
-            <div className="bg-gray-800/90 backdrop-blur-sm border-t border-gray-700 p-3">
-              <div className="flex items-center justify-between">
-                <h1 className="text-base font-bold text-white flex items-center gap-2">
-                  <span className="text-primary-400">∞</span>
-                  デュアル
-                </h1>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={selectedPalette}
-                    onChange={(e) => setSelectedPalette(e.target.value)}
-                    className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-gray-300 text-xs"
-                  >
-                    {paletteOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={onExitDualView}
-                    className="px-3 py-1 bg-primary-600 hover:bg-primary-700 text-white rounded transition-colors font-medium text-xs"
-                  >
-                    戻る
-                  </button>
+            {/* 区切り線 */}
+            <div className="h-px bg-gray-700 mx-4"></div>
+
+            {/* ジュリア集合ビュー */}
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="text-center mb-2">
+                <h3 className="text-white text-sm font-semibold mb-1">
+                  ジュリア集合
+                </h3>
+                <p className="text-gray-400 text-xs">
+                  c = {currentC.real.toFixed(4)} + {currentC.imag.toFixed(4)}i
+                </p>
+              </div>
+              
+              <div className="relative">
+                <canvas
+                  ref={juliaCanvasRef}
+                  className="border-2 border-gray-600 rounded-lg transition-all hover:border-green-500 max-w-full max-h-full"
+                  style={{
+                    width: `${canvasSize.julia.width}px`,
+                    height: `${canvasSize.julia.height}px`,
+                    imageRendering: 'auto'
+                  }}
+                  aria-label="ジュリア集合キャンバス"
+                />
+                
+                <div className="absolute top-2 left-2 bg-gray-900/80 backdrop-blur-sm px-2 py-1 rounded text-xs text-gray-300">
+                  {canvasSize.julia.renderWidth}×{canvasSize.julia.renderHeight}
                 </div>
               </div>
+            </div>
+
+            {/* Overlay Controls（通常ビューと同じ位置） */}
+            <div className="absolute top-4 right-4 space-y-2">
+              <button
+                onClick={onExitDualView}
+                className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                title="探索モードに戻る"
+              >
+                探索に戻る
+              </button>
+              <button
+                onClick={() => setBottomSheetHeight('half')}
+                className={`p-2 text-white rounded-lg transition-colors ${
+                  bottomSheetHeight === 'collapsed' 
+                    ? 'bg-primary-600 hover:bg-primary-700' 
+                    : 'bg-gray-800/90 hover:bg-gray-700/90'
+                }`}
+                title="設定を開く"
+              >
+                ⚙️
+              </button>
+              <button
+                onClick={() => {
+                  const defaultJulia = getDefaultParameters('julia') as JuliaParameters;
+                  setCurrentC(defaultJulia.c);
+                  onParameterChange(defaultJulia.c);
+                  updateCurrentC(defaultJulia.c);
+                }}
+                className="p-2 bg-gray-800/90 text-white rounded-lg hover:bg-gray-700/90 transition-colors"
+                title="パラメータをリセット"
+              >
+                ⌂
+              </button>
+            </div>
+          </div>
+
+          {/* ボトムナビゲーション */}
+          <div 
+            className={`fixed bottom-0 left-0 right-0 bg-gray-800/95 backdrop-blur-sm rounded-t-3xl shadow-2xl z-50 ${
+              isDragging ? '' : 'transition-transform duration-300'
+            }`}
+            style={{
+              height: '85vh',
+              minHeight: '300px',
+              transform: `translateY(${getTranslateY()}%)`,
+              paddingBottom: 'env(safe-area-inset-bottom)',
+              touchAction: 'none',
+            }}
+            ref={sheetRef}
+          >
+            {/* ハンドル */}
+            <div
+              className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing"
+              onTouchStart={handleDragStart}
+              onTouchMove={handleDragMove}
+              onTouchEnd={handleDragEnd}
+              onPointerDown={handleDragStart}
+              onPointerMove={handleDragMove}
+              onPointerUp={handleDragEnd}
+              onPointerCancel={handleDragEnd}
+              style={{ touchAction: 'none' }}
+            >
+              <div className="w-10 h-1 bg-gray-400 rounded-full"></div>
+            </div>
+
+            {/* ヘッダー */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <span className="text-primary-400">∞</span>
+                デュアルビューモード
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setBottomSheetHeight(bottomSheetHeight === 'full' ? 'half' : 'full')}
+                  className="p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d={
+                        bottomSheetHeight === 'full'
+                          ? 'M19 14l-7-7m0 0l-7 7m7-7v18'
+                          : 'M5 10l7-7m0 0l7 7m-7-7v18'
+                      }
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setBottomSheetHeight('collapsed')}
+                  className="p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* コンテンツ */}
+            <div 
+              className="flex-1 overflow-y-auto p-4 space-y-6 overscroll-contain"
+              style={{ 
+                maxHeight: 'calc(85vh - 120px)', // ハンドル+ヘッダー分を除外
+                scrollBehavior: 'smooth'
+              }}
+            >
+              {/* カラーパレット選択 */}
+              <div>
+                <label className="block text-lg font-semibold text-white mb-4">カラーパレット</label>
+                <select
+                  value={selectedPalette}
+                  onChange={(e) => setSelectedPalette(e.target.value)}
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-3 text-white focus:border-primary-500 focus:outline-none text-base"
+                >
+                  {paletteOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label} ({option.description})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* イテレーション数 */}
+              <div>
+                <label className="block text-lg font-semibold text-white mb-4">
+                  イテレーション数: <span className="text-primary-400 font-mono">{juliaIterations}</span>
+                </label>
+                <input
+                  type="range"
+                  min="50"
+                  max="1000"
+                  step="50"
+                  value={juliaIterations}
+                  onChange={(e) => setJuliaIterations(Number(e.target.value))}
+                  className="w-full h-3 bg-gray-600 rounded-full appearance-none cursor-pointer accent-primary-500"
+                />
+                <div className="flex justify-between text-sm text-gray-400 mt-2">
+                  <span>50</span>
+                  <span>1000</span>
+                </div>
+              </div>
+
+              {/* 現在のパラメータ表示 */}
+              <div className="bg-gray-700/50 p-4 rounded-xl">
+                <label className="block text-lg font-semibold text-white mb-3">現在のパラメータ</label>
+                <div className="space-y-2 text-base">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">実部 (Re):</span>
+                    <span className="text-white font-mono">{currentC.real.toFixed(6)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">虚部 (Im):</span>
+                    <span className="text-white font-mono">{currentC.imag.toFixed(6)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">複素数:</span>
+                    <span className="text-primary-400 font-mono">
+                      {currentC.real.toFixed(4)} + {currentC.imag.toFixed(4)}i
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* アクションボタン */}
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    const defaultJulia = getDefaultParameters('julia') as JuliaParameters;
+                    setCurrentC(defaultJulia.c);
+                    onParameterChange(defaultJulia.c);
+                    updateCurrentC(defaultJulia.c);
+                  }}
+                  className="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors font-medium text-base"
+                >
+                  パラメータをリセット
+                </button>
+              </div>
+
+              {/* 使用方法 */}
+              <div className="bg-primary-600/10 border border-primary-600/20 p-4 rounded-xl">
+                <h3 className="text-base font-medium text-primary-400 mb-2">💡 使用方法</h3>
+                <p className="text-sm text-gray-300 leading-relaxed">
+                  マンデルブロ集合をタップ・ドラッグしてcパラメータを変更すると、
+                  リアルタイムでジュリア集合が変化します。ドラッグ終了時に高品質でレンダリングされます。
+                </p>
+              </div>
+
+              {/* パフォーマンス情報（デバッグ用） */}
+              <div className="bg-gray-700/30 p-4 rounded-xl">
+                <h3 className="text-sm font-medium text-gray-300 mb-2">システム情報</h3>
+                <div className="text-xs text-gray-400 space-y-1">
+                  <div className="flex justify-between">
+                    <span>WebGPU:</span>
+                    <span className="text-green-400">✓ 有効</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Worker:</span>
+                    <span className="text-green-400">✓ 有効</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>画面:</span>
+                    <span className="text-blue-400">{canvasSize.julia.width}×{canvasSize.julia.height}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* スペーサー（最下部のスクロール余裕） */}
+              <div className="h-8"></div>
             </div>
           </div>
         </div>
@@ -664,16 +952,8 @@ const JuliaDualView: React.FC<JuliaDualViewProps> = ({
                   <label className="block text-sm font-medium text-gray-300 mb-2">現在のパラメータ</label>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-400">実部 (Re):</span>
-                      <span className="text-white font-mono">{currentC.real.toFixed(6)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">虚部 (Im):</span>
-                      <span className="text-white font-mono">{currentC.imag.toFixed(6)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">複素数:</span>
-                      <span className="text-primary-400 font-mono text-xs">
+                      <span>c =</span>
+                      <span className="text-primary-400 font-mono">
                         {currentC.real.toFixed(4)} + {currentC.imag.toFixed(4)}i
                       </span>
                     </div>
@@ -730,9 +1010,6 @@ const JuliaDualView: React.FC<JuliaDualViewProps> = ({
                     onMouseDown={handleMandelbrotMouseDown}
                     onMouseUp={handlePointerEnd}
                     onMouseLeave={handlePointerEnd}
-                    onTouchStart={handleMandelbrotTouchStart}
-                    onTouchMove={handleMandelbrotTouchMove}
-                    onTouchEnd={handlePointerEnd}
                     style={{
                       width: `${canvasSize.mandelbrot.width}px`,
                       height: `${canvasSize.mandelbrot.height}px`,
@@ -778,6 +1055,29 @@ const JuliaDualView: React.FC<JuliaDualViewProps> = ({
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Overlay Controls（通常ビューと同じ位置） */}
+            <div className="absolute top-4 right-4 space-y-2">
+              <button
+                onClick={onExitDualView}
+                className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                title="探索モードに戻る"
+              >
+                探索に戻る
+              </button>
+              <button
+                onClick={() => {
+                  const defaultJulia = getDefaultParameters('julia') as JuliaParameters;
+                  setCurrentC(defaultJulia.c);
+                  onParameterChange(defaultJulia.c);
+                  updateCurrentC(defaultJulia.c);
+                }}
+                className="p-2 bg-gray-800/90 text-white rounded-lg hover:bg-gray-700/90 transition-colors"
+                title="パラメータをリセット"
+              >
+                ⌂
+              </button>
             </div>
           </div>
         </div>
