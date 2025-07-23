@@ -16,7 +16,7 @@
     "type-check": "astro check",
     "deploy": "bun run build && gh-pages -d dist",
     "build:github": "astro check && astro build --site \"$ASTRO_SITE\" --base \"$ASTRO_BASE\"",
-    "ci": "npm ci && npm run lint && npm run type-check && npm run build"
+    "ci": "bun install --frozen-lockfile && bun run lint && bun run type-check && bun run build"
   },
   "keywords": [
     "astro",

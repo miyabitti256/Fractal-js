@@ -108,3 +108,7 @@ stats.html
 
 # Documentation
 docs/
+
+# Lock files (using Bun instead of npm)
+package-lock.json
+yarn.lock
