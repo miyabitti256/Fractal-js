@@ -5,8 +5,10 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://your-username.github.io',
-  base: '/Fractal-js',
+  // サイトURLはGitHub Actionsで動的に設定される
+  // ローカル開発時は環境変数で上書き可能
+  site: process.env.ASTRO_SITE || 'https://miyabitti256.github.io',
+  base: process.env.ASTRO_BASE || '/Fractal-js',
   outDir: './dist',
   publicDir: './public',
 
